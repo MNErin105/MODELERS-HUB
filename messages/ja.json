@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "savedWorks": "保存済み",
+    "switchToEN": "英語に切り替え",
+    "switchToJP": "日本語に切り替え"
+  },
+  "search": {
+    "placeholder": "作品・タグ・キットを検索...",
+    "ariaLabel": "作品・タグ・キットを検索"
+  },
+  "footer": {
+    "tagline": "スケールモデラーのためのアーカイブ — ガンプラ・ジオラマ、そして全て。"
+  },
+  "featured": {
+    "title": "注目作品",
+    "subtitle": "今週のトップ作品",
+    "weeklyRankLegend": "週間ランク",
+    "featuredLegend": "注目",
+    "badge_weekly1": "今週1位",
+    "badge_weekly2": "今週2位",
+    "badge_weekly3": "今週3位",
+    "badge_featured": "注目"
+  },
+  "rankings": {
+    "title": "週間ランキング",
+    "viewAll": "{category} の全作品を見る →",
+    "comingSoon": "準備中",
+    "rankingTitle": "{icon} {category} {period}ランキング",
+    "noWorksTitle": "{category} の作品はまだありません",
+    "noWorksSubtitle": "最初の {category} ビルドを投稿しましょう！",
+    "needBuildersTitle": "{category} のビルダーを募集中",
+    "needBuildersSubtitle": "あなたのビルドを投稿して競い合おう！",
+    "periods": {
+      "weekly": "週間",
+      "monthly": "月間",
+      "yearly": "年間"
+    },
+    "weeklyTitle": "{category} 週間ランキング",
+    "weeklyLikes": "週間いいね順",
+    "seeAll": "全て見る →"
+  },
+  "category": {
+    "backToArchive": "一覧に戻る",
+    "all": "すべて",
+    "worksCount": "{count} 件",
+    "allWorksTitle": "{category} の全作品",
+    "noWorks": "このカテゴリにはまだ作品がありません。",
+    "names": {
+      "Gunpla": "ガンプラ",
+      "Military": "ミリタリー",
+      "Car": "カーモデル",
+      "Character_Model": "キャラクターモデル",
+      "Diorama": "ジオラマ"
+    },
+    "descriptions": {
+      "Gunpla": "ガンダムシリーズのバンダイプラモデルキット。",
+      "Military": "ミリタリースケールモデル全般 — 戦車・航空機・艦船・潜水艦・軍用車両・ミリタリーフィギュア。",
+      "Car": "スケールカーモデル — レーシング・クラシック・ストリートビルド。",
+      "Character_Model": "キャラクター・フィギュアモデル — アニメ・SF・ファンタジー。",
+      "Diorama": "モデル・ベース・情景を組み合わせたジオラマ作品。"
+    }
+  },
+  "post": {
+    "backToArchive": "一覧に戻る",
+    "tabs": {
+      "works": "作品",
+      "journal": "制作記録",
+      "comments": "コメント"
+    }
+  },
+  "profile": {
+    "backToArchive": "一覧に戻る",
+    "posts": "投稿",
+    "totalLikes": "総いいね",
+    "totalSaves": "総保存",
+    "followers": "フォロワー",
+    "following": "フォロー中",
+    "worksTitle": "作品一覧",
+    "postsCount": "{count} 件"
+  },
+  "saved": {
+    "title": "保存済み作品",
+    "count": "{count} 件保存",
+    "emptyTitle": "保存済み作品はありません。",
+    "emptySubtitle": "作品のブックマークアイコンをクリックして保存できます。",
+    "browseButton": "作品を見る"
+  },
+  "follow": {
+    "follow": "フォローする",
+    "following": "フォロー中"
+  },
+  "workGrid": {
+    "empty": "作品が見つかりませんでした。"
+  }
+}

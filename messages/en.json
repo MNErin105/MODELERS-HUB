@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "savedWorks": "Saved Works",
+    "switchToEN": "Switch to English",
+    "switchToJP": "Switch to Japanese"
+  },
+  "search": {
+    "placeholder": "Search works, tags, kits...",
+    "ariaLabel": "Search works, tags, kits"
+  },
+  "footer": {
+    "tagline": "A technical archive for scale modelers — Gunpla, dioramas & more."
+  },
+  "featured": {
+    "title": "Featured",
+    "subtitle": "top works this week",
+    "weeklyRankLegend": "Weekly rank",
+    "featuredLegend": "Featured",
+    "badge_weekly1": "Weekly #1",
+    "badge_weekly2": "Weekly #2",
+    "badge_weekly3": "Weekly #3",
+    "badge_featured": "Featured"
+  },
+  "rankings": {
+    "title": "WEEKLY RANKINGS",
+    "viewAll": "View all {category} works →",
+    "comingSoon": "soon",
+    "rankingTitle": "{icon} {category} {period} RANKING",
+    "noWorksTitle": "No {category} works yet",
+    "noWorksSubtitle": "Be the first to submit a {category} build!",
+    "needBuildersTitle": "More {category} builders needed",
+    "needBuildersSubtitle": "Submit your build to compete!",
+    "periods": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "weeklyTitle": "{category} WEEKLY RANKING",
+    "weeklyLikes": "by weekly likes",
+    "seeAll": "See all →"
+  },
+  "category": {
+    "backToArchive": "Back to archive",
+    "all": "All",
+    "worksCount": "{count} works",
+    "allWorksTitle": "ALL {category} WORKS",
+    "noWorks": "No works in this category yet.",
+    "names": {
+      "Gunpla": "Gunpla",
+      "Military": "Military",
+      "Car": "Car",
+      "Character_Model": "Character Model",
+      "Diorama": "Diorama"
+    },
+    "descriptions": {
+      "Gunpla": "Bandai plastic model kits from the Gundam franchise.",
+      "Military": "All military scale models — tanks, aircraft, warships, submarines, military vehicles, and figures.",
+      "Car": "Scale car models — racing, classic, and street builds.",
+      "Character_Model": "Character and figure models — anime, sci-fi, and fantasy.",
+      "Diorama": "Scene and diorama builds combining models, bases, and environmental storytelling."
+    }
+  },
+  "post": {
+    "backToArchive": "Back to archive",
+    "tabs": {
+      "works": "Works",
+      "journal": "Build Journal",
+      "comments": "Comments"
+    }
+  },
+  "profile": {
+    "backToArchive": "Back to archive",
+    "posts": "Posts",
+    "totalLikes": "Total Likes",
+    "totalSaves": "Total Saves",
+    "followers": "Followers",
+    "following": "Following",
+    "worksTitle": "WORKS",
+    "postsCount": "{count} posts"
+  },
+  "saved": {
+    "title": "SAVED WORKS",
+    "count": "{count} saved",
+    "emptyTitle": "No saved works yet.",
+    "emptySubtitle": "Click the bookmark icon on any work to save it here.",
+    "browseButton": "Browse works"
+  },
+  "follow": {
+    "follow": "Follow",
+    "following": "Following"
+  },
+  "workGrid": {
+    "empty": "No works found."
+  }
+}

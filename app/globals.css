@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
+/* ════════════════════════════════════════════════════════════════════════
+ *  DESIGN TOKENS
+ * ════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg-primary:    #0a0a0b;
+  --bg-secondary:  #111114;
+  --bg-tertiary:   #1a1a1f;
+  --bg-overlay:    #1e1e24;
+
+  /* Borders */
+  --border-subtle: #2a2a32;
+  --border-muted:  #3a3a44;
+
+  /* Text */
+  --text-primary:  #f0f0f4;
+  --text-secondary:#9090a0;
+  --text-muted:    #5a5a6a;
+
+  /* Accent */
+  --accent-primary:  #c8a96e;
+  --accent-hover:    #dfc088;
+  --accent-muted:    #6e5830;
+
+  /* Semantic */
+  --color-save:    #4a9eff;
+  --color-like:    #ff6b6b;
+  --color-tag:     #2a3a4a;
+  --color-tag-text:#7ab8d8;
+
+  /* ── Typography ─────────────────────────────────────────────────────────
+   * --font-display : section headings, logo (Bebas Neue by default)
+   * --font-body    : body copy, UI text (DM Sans by default)
+   * --font-mono    : code, tags, badges (JetBrains Mono, unchanged)
+   * --font-smooch  : Smooch Sans Variable — injected by next/font/local
+   * ────────────────────────────────────────────────────────────────────── */
+  --font-display: var(--font-display-src, 'Bebas Neue', sans-serif);
+  --font-body:    var(--font-body-src,    'DM Sans',    sans-serif);
+  --font-mono:    'JetBrains Mono', monospace;
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  SMOOCH SANS — FONT PATTERN SWITCH
+ *
+ *  Pattern ①  Logo only (DEFAULT — no changes needed here)
+ *             → See components/layout/Header.tsx
+ *               The logo already uses  fontFamily: "var(--font-smooch)"
+ *
+ *  Pattern ②  Site-wide  ← UNCOMMENT the block below to activate
+ *             → Replaces display + body fonts everywhere with Smooch Sans
+ *               Comment it back out to return to Bebas Neue + DM Sans.
+ * ════════════════════════════════════════════════════════════════════════ */
+
+/*  ▼▼▼  PATTERN ②: UNCOMMENT TO APPLY SMOOCH SANS SITE-WIDE  ▼▼▼
+
+:root {
+  --font-display: var(--font-smooch);   /* replaces Bebas Neue  * /
+  --font-body:    var(--font-smooch);   /* replaces DM Sans     * /
+}
+
+   ▲▲▲  END PATTERN ②  ▲▲▲  */
+
+
+/* ════════════════════════════════════════════════════════════════════════
+ *  TAILWIND THEME BRIDGE
+ * ════════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-primary:      var(--bg-primary);
+  --color-bg-secondary:    var(--bg-secondary);
+  --color-bg-tertiary:     var(--bg-tertiary);
+  --color-bg-overlay:      var(--bg-overlay);
+  --color-border-subtle:   var(--border-subtle);
+  --color-border-muted:    var(--border-muted);
+  --color-text-primary:    var(--text-primary);
+  --color-text-secondary:  var(--text-secondary);
+  --color-text-muted:      var(--text-muted);
+  --color-accent-primary:  var(--accent-primary);
+  --color-accent-hover:    var(--accent-hover);
+  --color-accent-muted:    var(--accent-muted);
+  --color-save:            var(--color-save);
+  --color-like:            var(--color-like);
+  --color-tag:             var(--color-tag);
+  --color-tag-text:        var(--color-tag-text);
+  --font-display:          var(--font-display);
+  --font-body:             var(--font-body);
+  --font-mono:             var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ════════════════════════════════════════════════════════════════════════
+ *  BASE
+ * ════════════════════════════════════════════════════════════════════════ */
+
+html {
+  scroll-padding-top: 100px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background:  var(--bg-primary);
+  color:       var(--text-primary);
+  font-family: var(--font-body);
 }

@@ -1,0 +1,17 @@
+<svg width="540" height="420" viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>MH ロゴ</title>
+  <desc>ゴールドカラーのMHモノグラムロゴ</desc>
+
+  <style>
+    .logo-stroke { fill: #C9A84C; }
+  </style>
+
+  <polygon class="logo-stroke" points="120,360 155,360 260,120 225,120" />
+  <polygon class="logo-stroke" points="225,120 260,120 280,310 245,310" />
+  <polygon class="logo-stroke" points="245,310 280,310 370,120 335,120" />
+  <rect class="logo-stroke" x="335" y="120" width="38" height="240" />
+  <rect class="logo-stroke" x="490" y="120" width="38" height="240" />
+  <rect class="logo-stroke" x="335" y="218" width="193" height="38" />
+  <rect class="logo-stroke" x="60" y="360" width="560" height="26" />
+  <rect class="logo-stroke" x="60" y="396" width="560" height="8" />
+</svg>
