@@ -3,10 +3,15 @@ export type Category =
   | "Military"
   | "Car"
   | "Character Model"
-  | "Diorama";
+  | "Diorama"
+  | "Aircraft"
+  | "Ship"
+  | "Figure"
+  | "Other";
 
 export const CATEGORIES: Category[] = [
   "Gunpla", "Military", "Car", "Character Model", "Diorama",
+  "Aircraft", "Ship", "Figure", "Other",
 ];
 
 export function categorySlug(c: Category): string {
@@ -16,9 +21,6 @@ export function categorySlug(c: Category): string {
 export function slugToCategory(slug: string): Category | null {
   return CATEGORIES.find((c) => categorySlug(c) === slug) ?? null;
 }
-
-// ─── Category metadata ────────────────────────────────────────────────────────
-// subcategories: β版では Military に統合。将来 Tank / Aircraft / Ship 等へ細分化予定。
 
 export type CategoryMeta = {
   icon: string;
@@ -34,9 +36,8 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
   },
   "Military": {
     icon: "🪖",
-    description: "All military scale models — tanks, aircraft, warships, submarines, military vehicles, and figures.",
-    // β: unified. Future split → Tank | Aircraft | Ship | Submarine | Military Vehicle | Military Figure
-    subcategories: ["Tank", "Aircraft", "Ship", "Submarine", "Military Vehicle", "Military Figure"],
+    description: "All military scale models — tanks, warships, submarines, military vehicles, and figures.",
+    subcategories: ["Tank", "Submarine", "Military Vehicle", "Military Figure"],
   },
   "Car": {
     icon: "🚗",
@@ -53,6 +54,26 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
     description: "Scene and diorama builds combining models, bases, and environmental storytelling.",
     subcategories: [],
   },
+  "Aircraft": {
+    icon: "✈️",
+    description: "Scale aircraft models — fighters, bombers, civilian planes, and helicopters.",
+    subcategories: [],
+  },
+  "Ship": {
+    icon: "🚢",
+    description: "Scale warships and vessels — battleships, carriers, submarines, and sailboats.",
+    subcategories: [],
+  },
+  "Figure": {
+    icon: "🧍",
+    description: "Standalone figures — resin kits, garage kits, and painted character figures.",
+    subcategories: [],
+  },
+  "Other": {
+    icon: "🔧",
+    description: "Sci-fi, fantasy, and other builds that don't fit neatly elsewhere.",
+    subcategories: [],
+  },
 };
 
 export type Author = {
@@ -65,14 +86,10 @@ export type Author = {
   followingCount: number;
 };
 
-// ─── Works photos ───────────────────────────────────────────────────────────
-
 export type WorkPhoto = {
   url: string;
   caption: string;
 };
-
-// ─── Build Journal ───────────────────────────────────────────────────────────
 
 export type BuildStepImage = {
   url: string;
@@ -86,10 +103,7 @@ export type BuildStep = {
   description: string;
   images: BuildStepImage[];
   date: string;
-  // Future: technique tags, material refs, linked tool IDs
 };
-
-// ─── Comments ────────────────────────────────────────────────────────────────
 
 export type CommentReply = {
   id: string;
@@ -104,17 +118,15 @@ export type Comment = {
   content: string;
   replies: CommentReply[];
   createdAt: string;
-  // Future: upvoteCount, isHighlighted (AI-selected FAQ)
 };
-
-// ─── Post ─────────────────────────────────────────────────────────────────────
 
 export type Post = {
   id: string;
   title: string;
   description: string;
   thumbnailUrl: string;
-  images: WorkPhoto[];         // completed-work photos (Works tab gallery)
+  images: WorkPhoto[];
+  buildSteps?: BuildStep[];
   author: Author;
   tags: string[];
   category: Category;

@@ -1,6 +1,7 @@
 {
   "nav": {
     "savedWorks": "保存済み",
+    "newPost": "投稿する",
     "switchToEN": "英語に切り替え",
     "switchToJP": "日本語に切り替え"
   },
@@ -50,14 +51,22 @@
       "Military": "ミリタリー",
       "Car": "カーモデル",
       "Character_Model": "キャラクターモデル",
-      "Diorama": "ジオラマ"
+      "Diorama": "ジオラマ",
+      "Aircraft": "エアクラフト",
+      "Ship": "艦船",
+      "Figure": "フィギュア",
+      "Other": "その他"
     },
     "descriptions": {
       "Gunpla": "ガンダムシリーズのバンダイプラモデルキット。",
-      "Military": "ミリタリースケールモデル全般 — 戦車・航空機・艦船・潜水艦・軍用車両・ミリタリーフィギュア。",
+      "Military": "ミリタリースケールモデル全般 — 戦車・艦船・潜水艦・軍用車両・ミリタリーフィギュア。",
       "Car": "スケールカーモデル — レーシング・クラシック・ストリートビルド。",
       "Character_Model": "キャラクター・フィギュアモデル — アニメ・SF・ファンタジー。",
-      "Diorama": "モデル・ベース・情景を組み合わせたジオラマ作品。"
+      "Diorama": "モデル・ベース・情景を組み合わせたジオラマ作品。",
+      "Aircraft": "スケール航空機モデル — 戦闘機・爆撃機・民間機・ヘリコプター。",
+      "Ship": "スケール艦船モデル — 戦艦・空母・潜水艦・帆船。",
+      "Figure": "スタンドアロンフィギュア — レジンキット・ガレージキット・塗装済みキャラクター。",
+      "Other": "SF・ファンタジー・その他のジャンルに収まらない作品。"
     }
   },
   "post": {
@@ -66,6 +75,21 @@
       "works": "作品",
       "journal": "制作記録",
       "comments": "コメント"
+    },
+    "comments": {
+      "count": "{count} 件のコメント",
+      "placeholder": "質問やコメントを入力してください…",
+      "ariaLabel": "コメントを入力",
+      "post": "投稿",
+      "empty": "コメントはまだありません。最初に投稿しましょう！",
+      "loginPrompt": "コメントするにはログインしてください。",
+      "loginButton": "ログイン",
+      "hide": "閉じる",
+      "view": "{count}件を表示",
+      "reply": "返信",
+      "replies": "件の返信",
+      "authorBadge": "投稿者",
+      "aiFaq": "スレッドのよくある質問を自動生成 — 近日公開予定。"
     }
   },
   "profile": {
@@ -76,7 +100,13 @@
     "followers": "フォロワー",
     "following": "フォロー中",
     "worksTitle": "作品一覧",
-    "postsCount": "{count} 件"
+    "postsCount": "{count} 件",
+    "tabs": {
+      "works": "作品",
+      "wip": "WIP",
+      "liked": "いいね",
+      "bookmarks": "保存済み"
+    }
   },
   "saved": {
     "title": "保存済み作品",
@@ -91,5 +121,95 @@
   },
   "workGrid": {
     "empty": "作品が見つかりませんでした。"
+  },
+  "home": {
+    "filters": {
+      "sortBy": "並び替え:",
+      "new": "新着",
+      "popular": "人気順",
+      "wipOnly": "WIPのみ",
+      "finishedOnly": "完成品"
+    }
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "myPage": "マイページ",
+    "loginSubtitle": "ログインして作品を投稿し、コミュニティと交流しましょう。",
+    "signInWithGoogle": "Googleでログイン",
+    "demoNotice": "デモモード — 任意の名前を入力してご利用ください。",
+    "displayName": "表示名",
+    "displayNamePlaceholder": "例: 田中ガンプラ",
+    "country": "国",
+    "startUsing": "Modelers Hub を始める",
+    "terms": "ログインすることで利用規約に同意したものとみなされます。",
+    "loginRequired": "作品を投稿するにはログインしてください。"
+  },
+  "notification": {
+    "title": "通知",
+    "noNotifications": "通知はありません。",
+    "markAllRead": "すべて既読にする"
+  },
+  "newPost": {
+    "pageTitle": "作品を投稿",
+    "subtitle": "あなたのスケールモデルをコミュニティとシェアしましょう。",
+    "back": "戻る",
+    "cancel": "キャンセル",
+    "submit": "Modelers Hub に投稿",
+    "submitting": "投稿中…",
+    "imageOrderHint": "ドラッグで並び替え · 先頭がカバー画像 · ×で削除",
+    "tagHint": "Enter またはカンマで追加",
+    "tagHintMax": "— 最大{max}個",
+    "notFound": "投稿が見つかりません。セッションが切れた可能性があります。",
+    "sections": {
+      "photos": "写真",
+      "about": "作品について",
+      "materials": "使用素材・テクニック",
+      "tags": "タグ",
+      "wip": "制作過程（オプション）"
+    },
+    "fields": {
+      "title": "タイトル",
+      "description": "説明",
+      "category": "カテゴリー",
+      "kit": "使用キット",
+      "paints": "塗料",
+      "tools": "工具・ツール",
+      "techniques": "テクニック",
+      "tags": "タグ"
+    },
+    "placeholders": {
+      "title": "例: MG νガンダム Ver.Ka — フルサイコフレーム",
+      "description": "制作工程、使用テクニック、こだわりポイントなどを書いてください…",
+      "kit": "例: MG 1/100 νガンダム Ver.Ka、タミヤ 1/35 タイガーI",
+      "paints": "Mr.カラー、バレホ…",
+      "tools": "エアブラシ、筆塗り…",
+      "techniques": "ウェザリング、NMM…",
+      "tags": "#ガンプラ #1/100 #ウェザリング…",
+      "caption": "キャプション…",
+      "addTag": "タグを追加…"
+    },
+    "errors": {
+      "title": "タイトルは必須です。",
+      "description": "説明は必須です。",
+      "images": "画像を1枚以上追加してください。"
+    },
+    "upload": {
+      "dropHint": "ここに画像をドロップ、またはクリックして選択",
+      "formats": "JPEG · PNG · WebP · 最大{max}枚",
+      "addMore": "追加（残り{remaining}枚）"
+    },
+    "image": {
+      "cover": "カバー",
+      "remove": "削除"
+    },
+    "wip": {
+      "toggle": "制作過程を含める",
+      "addStep": "ステップを追加",
+      "removeStep": "ステップを削除",
+      "stepTitle": "ステップ{n}のタイトル…",
+      "stepDesc": "このステップで行った作業を説明してください…",
+      "addPhotos": "写真を追加（残り{remaining}枚）"
+    }
   }
 }

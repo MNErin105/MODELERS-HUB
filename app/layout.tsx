@@ -4,8 +4,11 @@ import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import LoginModal from "@/components/layout/LoginModal";
 import { AppProvider } from "@/lib/context/AppContext";
 import { LocaleProvider } from "@/lib/context/LocaleContext";
+import { AuthProvider } from "@/lib/context/AuthContext";
+import { NotificationProvider } from "@/lib/context/NotificationContext";
 
 // ─── Google Fonts ─────────────────────────────────────────────────────────
 
@@ -61,11 +64,16 @@ export default function RootLayout({
         style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
       >
         <LocaleProvider>
-          <AppProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </AppProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <AppProvider>
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+                <LoginModal />
+              </AppProvider>
+            </NotificationProvider>
+          </AuthProvider>
         </LocaleProvider>
       </body>
     </html>

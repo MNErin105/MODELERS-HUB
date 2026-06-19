@@ -1,6 +1,7 @@
 {
   "nav": {
     "savedWorks": "Saved Works",
+    "newPost": "Post",
     "switchToEN": "Switch to English",
     "switchToJP": "Switch to Japanese"
   },
@@ -50,14 +51,22 @@
       "Military": "Military",
       "Car": "Car",
       "Character_Model": "Character Model",
-      "Diorama": "Diorama"
+      "Diorama": "Diorama",
+      "Aircraft": "Aircraft",
+      "Ship": "Ship",
+      "Figure": "Figure",
+      "Other": "Other"
     },
     "descriptions": {
       "Gunpla": "Bandai plastic model kits from the Gundam franchise.",
-      "Military": "All military scale models — tanks, aircraft, warships, submarines, military vehicles, and figures.",
+      "Military": "All military scale models — tanks, warships, submarines, military vehicles, and figures.",
       "Car": "Scale car models — racing, classic, and street builds.",
       "Character_Model": "Character and figure models — anime, sci-fi, and fantasy.",
-      "Diorama": "Scene and diorama builds combining models, bases, and environmental storytelling."
+      "Diorama": "Scene and diorama builds combining models, bases, and environmental storytelling.",
+      "Aircraft": "Scale aircraft models — fighters, bombers, civilian planes, and helicopters.",
+      "Ship": "Scale warships and vessels — battleships, carriers, submarines, and sailboats.",
+      "Figure": "Standalone figures — resin kits, garage kits, and painted character figures.",
+      "Other": "Sci-fi, fantasy, and other builds that don't fit neatly elsewhere."
     }
   },
   "post": {
@@ -66,6 +75,21 @@
       "works": "Works",
       "journal": "Build Journal",
       "comments": "Comments"
+    },
+    "comments": {
+      "count": "{count, plural, one {# Comment} other {# Comments}}",
+      "placeholder": "Ask a question or leave a comment…",
+      "ariaLabel": "Write a comment",
+      "post": "Post",
+      "empty": "No comments yet. Be the first to ask!",
+      "loginPrompt": "Sign in to leave a comment.",
+      "loginButton": "Sign in",
+      "hide": "Hide",
+      "view": "View {count}",
+      "reply": "reply",
+      "replies": "replies",
+      "authorBadge": "Author",
+      "aiFaq": "Frequently asked questions auto-generated from this thread — coming soon."
     }
   },
   "profile": {
@@ -76,7 +100,13 @@
     "followers": "Followers",
     "following": "Following",
     "worksTitle": "WORKS",
-    "postsCount": "{count} posts"
+    "postsCount": "{count} posts",
+    "tabs": {
+      "works": "Works",
+      "wip": "WIP",
+      "liked": "Liked",
+      "bookmarks": "Bookmarks"
+    }
   },
   "saved": {
     "title": "SAVED WORKS",
@@ -91,5 +121,95 @@
   },
   "workGrid": {
     "empty": "No works found."
+  },
+  "home": {
+    "filters": {
+      "sortBy": "Sort:",
+      "new": "New",
+      "popular": "Popular",
+      "wipOnly": "WIP Only",
+      "finishedOnly": "Finished"
+    }
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "myPage": "My Page",
+    "loginSubtitle": "Sign in to share your builds and interact with the community.",
+    "signInWithGoogle": "Continue with Google",
+    "demoNotice": "Demo mode — enter any display name to get started.",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "e.g. Tanaka_Gunpla",
+    "country": "Country",
+    "startUsing": "Start Using Modelers Hub",
+    "terms": "By signing in, you agree to our Terms of Service.",
+    "loginRequired": "Sign in to post your work."
+  },
+  "notification": {
+    "title": "Notifications",
+    "noNotifications": "No notifications yet.",
+    "markAllRead": "Mark all read"
+  },
+  "newPost": {
+    "pageTitle": "SHARE YOUR WORK",
+    "subtitle": "Share your scale model build with the community.",
+    "back": "Back",
+    "cancel": "Cancel",
+    "submit": "Post to Modelers Hub",
+    "submitting": "Posting…",
+    "imageOrderHint": "Drag to reorder · First image is the cover · × to remove",
+    "tagHint": "Enter or comma to add",
+    "tagHintMax": "— max {max}",
+    "notFound": "Post not found or session expired.",
+    "sections": {
+      "photos": "Photos",
+      "about": "About the Build",
+      "materials": "Materials & Techniques",
+      "tags": "Tags",
+      "wip": "Work in Progress (Optional)"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "category": "Category",
+      "kit": "Kit Name",
+      "paints": "Paints",
+      "tools": "Tools",
+      "techniques": "Techniques",
+      "tags": "Tags"
+    },
+    "placeholders": {
+      "title": "e.g. MG Nu Gundam Ver.Ka — Full Psycho-Frame",
+      "description": "Describe your build, techniques used, and what you're proud of…",
+      "kit": "e.g. MG 1/100 νGundam Ver.Ka, Tamiya 1/35 Tiger I",
+      "paints": "Mr. Color, Vallejo…",
+      "tools": "Airbrush, Hand-brushed…",
+      "techniques": "Weathering, NMM…",
+      "tags": "#Gunpla #1/100 #Weathering…",
+      "caption": "Caption…",
+      "addTag": "Add tag…"
+    },
+    "errors": {
+      "title": "Title is required.",
+      "description": "Description is required.",
+      "images": "At least one image is required."
+    },
+    "upload": {
+      "dropHint": "Drop images here or click to select",
+      "formats": "JPEG · PNG · WebP · up to {max} images",
+      "addMore": "Add more ({remaining} remaining)"
+    },
+    "image": {
+      "cover": "Cover",
+      "remove": "Remove image"
+    },
+    "wip": {
+      "toggle": "Include build process steps",
+      "addStep": "Add Step",
+      "removeStep": "Remove step",
+      "stepTitle": "Step {n} title…",
+      "stepDesc": "Describe what you did in this step…",
+      "addPhotos": "Add photos ({remaining} max)"
+    }
   }
 }

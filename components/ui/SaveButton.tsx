@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bookmark } from "lucide-react";
 import { useApp } from "@/lib/context/AppContext";
+import { useAuth } from "@/lib/context/AuthContext";
 
 type Props = {
   postId: string;
@@ -11,12 +12,14 @@ type Props = {
 
 export default function SaveButton({ postId, count }: Props) {
   const { savedIds, toggleSave } = useApp();
+  const { user, openLoginModal } = useAuth();
   const saved = savedIds.has(postId);
   const [animate, setAnimate] = useState(false);
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) { openLoginModal(); return; }
     toggleSave(postId);
     setAnimate(true);
     setTimeout(() => setAnimate(false), 300);

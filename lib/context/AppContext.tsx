@@ -1,34 +1,50 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { Post, Author } from "@/lib/types";
+
+export const SELF_AUTHOR: Author = {
+  id: "self",
+  name: "You",
+  avatarUrl: "",
+  country: "JP",
+  bio: "",
+  followersCount: 0,
+  followingCount: 0,
+};
 
 type AppState = {
-  likedIds: Set<string>;
-  savedIds: Set<string>;
+  likedIds:    Set<string>;
+  savedIds:    Set<string>;
   followedIds: Set<string>;
-  toggleLike: (postId: string) => void;
-  toggleSave: (postId: string) => void;
+  userPosts:   Post[];
+  toggleLike:   (postId: string)  => void;
+  toggleSave:   (postId: string)  => void;
   toggleFollow: (authorId: string) => void;
+  addPost:      (post: Post)      => void;
 };
 
 const AppContext = createContext<AppState>({
-  likedIds: new Set(),
-  savedIds: new Set(),
+  likedIds:    new Set(),
+  savedIds:    new Set(),
   followedIds: new Set(),
-  toggleLike: () => {},
-  toggleSave: () => {},
+  userPosts:   [],
+  toggleLike:   () => {},
+  toggleSave:   () => {},
   toggleFollow: () => {},
+  addPost:      () => {},
 });
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [likedIds,    setLikedIds]    = useState<Set<string>>(new Set());
+  const [savedIds,    setSavedIds]    = useState<Set<string>>(new Set());
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+  const [userPosts,   setUserPosts]   = useState<Post[]>([]);
 
   useEffect(() => {
     try {
-      setLikedIds(new Set(JSON.parse(localStorage.getItem("mh-liked") || "[]")));
-      setSavedIds(new Set(JSON.parse(localStorage.getItem("mh-saved") || "[]")));
+      setLikedIds(new Set(JSON.parse(localStorage.getItem("mh-liked")    || "[]")));
+      setSavedIds(new Set(JSON.parse(localStorage.getItem("mh-saved")    || "[]")));
       setFollowedIds(new Set(JSON.parse(localStorage.getItem("mh-followed") || "[]")));
     } catch {}
   }, []);
@@ -60,8 +76,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const addPost = useCallback((post: Post) => {
+    setUserPosts((prev) => [post, ...prev]);
+  }, []);
+
   return (
-    <AppContext.Provider value={{ likedIds, savedIds, followedIds, toggleLike, toggleSave, toggleFollow }}>
+    <AppContext.Provider value={{
+      likedIds, savedIds, followedIds, userPosts,
+      toggleLike, toggleSave, toggleFollow, addPost,
+    }}>
       {children}
     </AppContext.Provider>
   );

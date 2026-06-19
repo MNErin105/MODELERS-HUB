@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { useApp } from "@/lib/context/AppContext";
+import { useAuth } from "@/lib/context/AuthContext";
 
 type Props = {
   postId: string;
@@ -11,12 +12,14 @@ type Props = {
 
 export default function LikeButton({ postId, count }: Props) {
   const { likedIds, toggleLike } = useApp();
+  const { user, openLoginModal } = useAuth();
   const liked = likedIds.has(postId);
   const [animate, setAnimate] = useState(false);
 
   function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) { openLoginModal(); return; }
     toggleLike(postId);
     setAnimate(true);
     setTimeout(() => setAnimate(false), 300);

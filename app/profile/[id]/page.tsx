@@ -1,16 +1,20 @@
 import { notFound } from "next/navigation";
 import { posts } from "@/lib/dummy-data";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
+import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
 
 type Props = { params: Promise<{ id: string }> };
 
 export function generateStaticParams() {
   const ids = [...new Set(posts.map((p) => p.author.id))];
-  return ids.map((id) => ({ id }));
+  return [...ids.map((id) => ({ id })), { id: "self" }];
 }
 
 export default async function ProfilePage({ params }: Props) {
   const { id } = await params;
+
+  if (id === "self") return <DynamicProfilePage />;
+
   const authorPosts = posts.filter((p) => p.author.id === id);
   if (authorPosts.length === 0) notFound();
 
