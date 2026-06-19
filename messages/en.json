@@ -52,8 +52,6 @@
       "Car": "Car",
       "Character_Model": "Character Model",
       "Diorama": "Diorama",
-      "Aircraft": "Aircraft",
-      "Ship": "Ship",
       "Figure": "Figure",
       "Other": "Other"
     },
@@ -63,8 +61,6 @@
       "Car": "Scale car models — racing, classic, and street builds.",
       "Character_Model": "Character and figure models — anime, sci-fi, and fantasy.",
       "Diorama": "Scene and diorama builds combining models, bases, and environmental storytelling.",
-      "Aircraft": "Scale aircraft models — fighters, bombers, civilian planes, and helicopters.",
-      "Ship": "Scale warships and vessels — battleships, carriers, submarines, and sailboats.",
       "Figure": "Standalone figures — resin kits, garage kits, and painted character figures.",
       "Other": "Sci-fi, fantasy, and other builds that don't fit neatly elsewhere."
     }
@@ -126,9 +122,7 @@
     "filters": {
       "sortBy": "Sort:",
       "new": "New",
-      "popular": "Popular",
-      "wipOnly": "WIP Only",
-      "finishedOnly": "Finished"
+      "popular": "Popular"
     }
   },
   "auth": {

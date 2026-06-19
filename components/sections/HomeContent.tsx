@@ -18,7 +18,7 @@ import AllCategoryRankings from "./AllCategoryRankings";
 import WorkGrid from "@/components/ui/WorkGrid";
 import CategoryFilter from "@/components/ui/CategoryFilter";
 
-type SortMode = "new" | "popular" | "wip" | "finished";
+type SortMode = "new" | "popular";
 
 // ── People card ───────────────────────────────────────────────────────────────
 
@@ -92,8 +92,6 @@ export default function HomeContent() {
     let result = posts;
 
     if (activeCategory) result = result.filter((p) => p.category === activeCategory);
-    if (sortMode === "wip")      result = result.filter((p) => p.buildSteps && p.buildSteps.length > 0);
-    if (sortMode === "finished") result = result.filter((p) => !p.buildSteps || p.buildSteps.length === 0);
 
     if (query.trim()) {
       const q = query.toLowerCase();
@@ -118,10 +116,8 @@ export default function HomeContent() {
   const isFiltered = !!query.trim() || activeCategory !== null || sortMode !== "new";
 
   const sortOptions: { key: SortMode; label: string }[] = [
-    { key: "new",      label: t("filters.new") },
-    { key: "popular",  label: t("filters.popular") },
-    { key: "wip",      label: t("filters.wipOnly") },
-    { key: "finished", label: t("filters.finishedOnly") },
+    { key: "new",     label: t("filters.new") },
+    { key: "popular", label: t("filters.popular") },
   ];
 
   return (
