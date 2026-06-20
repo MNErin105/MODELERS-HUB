@@ -41,10 +41,6 @@ export const DUMMY_USER_PROFILES: UserProfile[] = uniqueAuthors.map((a) => ({
   followersCount: a.followersCount,
 }));
 
-export const DUMMY_TAKEN_USERNAMES = new Set(
-  Object.values(DUMMY_USERNAME_MAP).map((u) => u.toLowerCase())
-);
-
 // ── Search ────────────────────────────────────────────────────────────────────
 
 export function searchUsers(query: string, extra: UserProfile[] = []): UserProfile[] {
@@ -65,13 +61,3 @@ export function searchUsers(query: string, extra: UserProfile[] = []): UserProfi
   );
 }
 
-// ── Username format validation ────────────────────────────────────────────────
-
-export const USERNAME_REGEX = /^[a-z0-9_-]{3,20}$/;
-
-export function validateUsernameFormat(username: string): "ok" | "short" | "long" | "invalid_chars" {
-  if (username.length < 3)  return "short";
-  if (username.length > 20) return "long";
-  if (!USERNAME_REGEX.test(username)) return "invalid_chars";
-  return "ok";
-}

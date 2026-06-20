@@ -4,7 +4,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
-export type LightboxImage = { url: string; caption?: string };
+export type LightboxImage = {
+  url: string;
+  caption?: string;
+  /** Shown only in the fullscreen lightbox, not in feed/gallery thumbnails. */
+  authorComment?: string | null;
+};
 
 type Props = {
   images: LightboxImage[];
@@ -66,7 +71,6 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
     if (e.touches.length === 1) {
       touchX.current = e.touches[0].clientX;
       touchY.current = e.touches[0].clientY;
-      // Double-tap to zoom
       const now = Date.now();
       if (now - lastTap.current < 280) {
         setScale(s => (s > 1 ? 1 : 2.5));
@@ -90,7 +94,6 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    // Swipe to navigate — only when not zoomed
     if (scale > 1.05 || images.length <= 1 || e.changedTouches.length !== 1) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
     const dy = e.changedTouches[0].clientY - touchY.current;
@@ -100,6 +103,7 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
   };
 
   const img = images[index];
+  const hasComment = !!img.authorComment;
 
   return (
     <div
@@ -108,41 +112,45 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
       onClick={dismiss}
       style={{
         position: "fixed", inset: 0, zIndex: 9999,
-        background: "rgba(0, 0, 0, 0.93)",
+        background: "rgba(0,0,0,0.93)",
+        display: "flex", flexDirection: "column",
         opacity: show ? 1 : 0,
         transition: "opacity 0.2s ease",
       }}
     >
-      {/* ── Close button ─────────────────────────────────────────── */}
+      {/* ── Close button ─────────────────────────────────────────────────────── */}
       <button
         onClick={(e) => { e.stopPropagation(); dismiss(); }}
         aria-label="Close"
-        style={overlayBtn({ top: 14, right: 14 })}
+        style={overlayBtn({ position: "absolute", top: 14, right: 14, zIndex: 10 })}
       >
         <X size={18} />
       </button>
 
-      {/* ── Navigation arrows ────────────────────────────────────── */}
+      {/* ── Navigation arrows ────────────────────────────────────────────────── */}
       {images.length > 1 && (
         <>
           <button
             onClick={(e) => { e.stopPropagation(); prev(); }}
             aria-label="Previous image"
-            style={overlayBtn({ left: 14, top: "50%", transform: "translateY(-50%)" })}
+            style={overlayBtn({ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", zIndex: 10 })}
           >
             <ChevronLeft size={22} />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); next(); }}
             aria-label="Next image"
-            style={overlayBtn({ right: 14, top: "50%", transform: "translateY(-50%)" })}
+            style={overlayBtn({ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", zIndex: 10 })}
           >
             <ChevronRight size={22} />
           </button>
         </>
       )}
 
-      {/* ── Image zone ───────────────────────────────────────────── */}
+      {/* ── Top spacer (keeps image below the close button) ──────────────────── */}
+      <div style={{ flexShrink: 0, height: 56 }} />
+
+      {/* ── Image zone ───────────────────────────────────────────────────────── */}
       <div
         ref={imgZone}
         onTouchStart={onTouchStart}
@@ -150,11 +158,10 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
         onTouchEnd={onTouchEnd}
         onClick={(e) => e.stopPropagation()}
         style={{
-          position: "absolute",
-          top: "50%", left: "50%",
-          width: "min(90vw, 1400px)",
-          height: "calc(100dvh - 96px)",
-          transform: `translate(-50%, -50%) scale(${scale})`,
+          flex: "1 1 0",
+          minHeight: 0,
+          position: "relative",
+          transform: `scale(${scale})`,
           transition: scale === 1 ? "transform 0.2s ease" : "none",
           cursor: scale > 1 ? "grab" : "zoom-in",
         }}
@@ -167,41 +174,75 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
           priority
           sizes="min(90vw, 1400px)"
           style={{ objectFit: "contain" }}
+          unoptimized
         />
       </div>
 
-      {/* ── Bottom bar: caption + counter ────────────────────────── */}
+      {/* ── Bottom bar: author comment + caption + counter ───────────────────── */}
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          position: "absolute", bottom: 0, left: 0, right: 0,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 20px",
-          height: 48,
-          background: "rgba(0, 0, 0, 0.6)",
-          backdropFilter: "blur(6px)",
+          flexShrink: 0,
+          background: "rgba(0,0,0,0.72)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          padding: hasComment ? "14px 20px 16px" : "0 20px",
         }}
       >
-        <span
-          style={{
-            fontSize: 13, color: "rgba(255,255,255,0.55)",
-            fontFamily: "var(--font-mono)",
-            flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}
-        >
-          {img.caption}
-        </span>
-        {images.length > 1 && (
-          <span
+        {/* Author comment — fullscreen only */}
+        {hasComment && (
+          <p
             style={{
-              fontSize: 12, color: "rgba(255,255,255,0.4)",
-              fontFamily: "var(--font-mono)",
-              flexShrink: 0, paddingLeft: 16,
+              fontSize: 14,
+              color: "rgba(255,255,255,0.88)",
+              lineHeight: 1.75,
+              marginBottom: 10,
+              // Cap at ~4 lines on small screens, scroll for longer comments
+              maxHeight: "7em",
+              overflowY: "auto",
+              // Prevent layout shift from very long comments
+              wordBreak: "break-word",
             }}
           >
-            {index + 1} / {images.length}
-          </span>
+            {img.authorComment}
+          </p>
         )}
+
+        {/* Caption + counter row */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            minHeight: 44,
+            gap: 16,
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              color: "rgba(255,255,255,0.45)",
+              fontFamily: "var(--font-mono)",
+              flex: 1,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {img.caption}
+          </span>
+          {images.length > 1 && (
+            <span
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.35)",
+                fontFamily: "var(--font-mono)",
+                flexShrink: 0,
+              }}
+            >
+              {index + 1} / {images.length}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -209,11 +250,10 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
 
 function overlayBtn(pos: React.CSSProperties): React.CSSProperties {
   return {
-    position: "absolute", zIndex: 1,
     width: 40, height: 40, borderRadius: "50%",
     display: "flex", alignItems: "center", justifyContent: "center",
-    background: "rgba(255, 255, 255, 0.12)",
-    border: "1px solid rgba(255, 255, 255, 0.2)",
+    background: "rgba(255,255,255,0.12)",
+    border: "1px solid rgba(255,255,255,0.2)",
     color: "#fff", cursor: "pointer",
     ...pos,
   };

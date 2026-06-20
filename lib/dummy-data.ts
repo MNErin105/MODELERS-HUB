@@ -12,8 +12,8 @@ const authors: Record<string, Author> = {
   a8: { id: "a8", name: "Hiroshi Yamada",   avatarUrl: "https://picsum.photos/seed/author-jp3/64/64", country: "JP", bio: "Car model enthusiast from Nagoya. Tamiya 1/24 with extreme interior detail.", followersCount: 290, followingCount: 38 },
 };
 
-function lp(category: Parameters<typeof getImage>[0], idx: number, caption: string): WorkPhoto {
-  return { url: getImage(category, idx), caption };
+function lp(category: Parameters<typeof getImage>[0], idx: number, caption: string, authorComment?: string): WorkPhoto {
+  return authorComment ? { url: getImage(category, idx), caption, authorComment } : { url: getImage(category, idx), caption };
 }
 
 export const posts: Post[] = [
@@ -22,11 +22,11 @@ export const posts: Post[] = [
     description: "Heavy weathering on the iconic Ver.Ka with custom psycho-frame LED integration. Panel Line Accent Color and Tamiya weathering sticks for battlefield realism.",
     thumbnailUrl: getImage("Gunpla", 0),
     images: [
-      lp("Gunpla", 0, "Front — full pose"),
-      lp("Gunpla", 1, "Rear — backpack detail"),
-      lp("Gunpla", 2, "Psycho-frame closeup"),
+      lp("Gunpla", 0, "Front — full pose", "The display pose took about two hours to dial in. The fin funnels are balanced with clear parts I thinned down with a hobby saw so they don't droop under their own weight."),
+      lp("Gunpla", 1, "Rear — backpack detail", "The backpack was the most time-intensive part. I layered Mr. Surfacer 1200 as a primer, then went over every rivet with 0.3 mm scribing."),
+      lp("Gunpla", 2, "Psycho-frame closeup", "UV-reactive resin poured into the frame cavities. Under a black-light this glows pure green — a trick I picked up from the Gunpla Expo display builds."),
       lp("Gunpla", 3, "Weapons loadout"),
-      lp("Gunpla", 4, "Weathering detail"),
+      lp("Gunpla", 4, "Weathering detail", "Chipping was done with a sponge torn from a blister pack — gives a much more irregular edge than a brush."),
     ],
     author: authors.a1, category: "Gunpla", tags: ["Weathering", "LED", "Scribing"],
     kit: "MG νGundam Ver.Ka", paints: ["Gaia Notes Ex White", "Mr.Color GX Metal Blue", "Tamiya Panel Line"],

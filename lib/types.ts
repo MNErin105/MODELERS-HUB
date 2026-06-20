@@ -89,6 +89,8 @@ export type Author = {
 export type WorkPhoto = {
   url: string;
   caption: string;
+  /** Author's per-image comment — shown only in the fullscreen lightbox, not in feed. */
+  authorComment?: string | null;
 };
 
 export type BuildStepImage = {

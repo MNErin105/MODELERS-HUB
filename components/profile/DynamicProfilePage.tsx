@@ -10,7 +10,7 @@ import ProfilePageClient from "./ProfilePageClient";
 
 export default function DynamicProfilePage() {
   const router = useRouter();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, updateAvatar } = useAuth();
   const { userPosts } = useApp();
 
   // allPosts is used ONLY by Liked / Bookmarks tabs (need the full catalogue
@@ -49,6 +49,7 @@ export default function DynamicProfilePage() {
       username={user.username}
       allPosts={allPosts}
       onSignOut={signOut}
+      onUpdateAvatar={updateAvatar}
     />
   );
 }

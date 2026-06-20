@@ -6,6 +6,7 @@ import { Comment } from "@/lib/types";
 import { ChevronDown, ChevronUp, MessageSquare, Send, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/context/AuthContext";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 type Props = { comments: Comment[]; postId: string };
 
@@ -137,7 +138,7 @@ export default function CommentsTab({ comments, postId }: Props) {
               style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
             >
               <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0">
-                <Image src={user.avatarUrl} alt={user.name} fill className="object-cover" sizes="36px" unoptimized />
+                <UserAvatar src={user.avatarUrl} alt={user.name} fill />
               </div>
               <div className="flex-1 flex flex-col gap-2">
                 <textarea

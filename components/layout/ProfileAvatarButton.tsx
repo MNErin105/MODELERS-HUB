@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { AuthUser } from "@/lib/context/AuthContext";
 
 type Props = {
@@ -10,14 +10,7 @@ type Props = {
   // Future: onMenuOpen?: () => void  (for dropdown)
 };
 
-/**
- * Circular profile avatar in the header.
- * Currently navigates directly to /mypage on click.
- * Structured for future dropdown expansion (wrap in relative div, add dropdown sibling).
- */
 export default function ProfileAvatarButton({ user, size = 34 }: Props) {
-  const avatarSrc = user.avatarUrl || `https://picsum.photos/seed/${encodeURIComponent(user.id)}/68/68`;
-
   return (
     <Link
       href="/mypage"
@@ -29,14 +22,7 @@ export default function ProfileAvatarButton({ user, size = 34 }: Props) {
         border: "2px solid var(--accent-muted)",
       }}
     >
-      <Image
-        src={avatarSrc}
-        alt={user.name}
-        width={size}
-        height={size}
-        className="object-cover w-full h-full"
-        unoptimized
-      />
+      <UserAvatar src={user.avatarUrl} alt={user.name} fill />
     </Link>
   );
 }

@@ -6,6 +6,7 @@ import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
+import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileAvatarButton from "@/components/layout/ProfileAvatarButton";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useNotifications, NotificationItem } from "@/lib/context/NotificationContext";
@@ -200,7 +201,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden" style={{ border: "2px solid var(--accent-muted)" }}>
-                  <Image src={user.avatarUrl} alt={user.name} fill className="object-cover" sizes="32px" unoptimized />
+                  <UserAvatar src={user.avatarUrl} alt={user.name} fill />
                 </div>
                 <div>
                   <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{user.name}</p>
@@ -265,9 +266,9 @@ function HeaderInner() {
           <Image
             src="/images/logo.jpeg"
             alt="Modelers Hub"
-            width={90}
-            height={75}
-            className="w-[90px] h-auto object-contain transition-all hover:opacity-90 hover:scale-[1.02] cursor-pointer select-none"
+            width={72}
+            height={60}
+            className="w-[72px] h-auto object-contain transition-all hover:opacity-90 hover:scale-[1.02] cursor-pointer select-none"
           />
         </Link>
 
@@ -321,15 +322,13 @@ function HeaderInner() {
                 </div>
               )}
 
-              {/* Auth: logged in → profile icon; logged out → Sign in button */}
+              {/* Auth: logged in → profile icon; logged out → Sign in button (both mobile + desktop) */}
               {user ? (
-                <div className="hidden md:block">
-                  <ProfileAvatarButton user={user} />
-                </div>
+                <ProfileAvatarButton user={user} />
               ) : (
                 <button
                   onClick={openLoginModal}
-                  className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                  className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
                   style={{
                     background: "var(--bg-tertiary)",
                     color: "var(--text-primary)",

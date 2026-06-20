@@ -9,6 +9,7 @@ export type UploadedImage = {
   id: string;
   url: string;
   caption: string;
+  authorComment: string;
 };
 
 type Props = {
@@ -16,9 +17,10 @@ type Props = {
   onReorder: (images: UploadedImage[]) => void;
   onDelete: (id: string) => void;
   onCaptionChange: (id: string, caption: string) => void;
+  onAuthorCommentChange: (id: string, comment: string) => void;
 };
 
-export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptionChange }: Props) {
+export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptionChange, onAuthorCommentChange }: Props) {
   const t = useTranslations("newPost");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -48,7 +50,7 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
   function reset() { setDragIdx(null); setOverIdx(null); }
 
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))" }}>
+    <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
       {images.map((img, i) => {
         const isDragging = dragIdx === i;
         const isOver     = overIdx === i && dragIdx !== i;
@@ -62,7 +64,7 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
             onDragOver={(e)  => onDragOver(e, i)}
             onDrop={(e)      => onDrop(e, i)}
             onDragEnd={reset}
-            className="relative rounded-xl overflow-hidden flex flex-col gap-1"
+            className="relative rounded-xl overflow-hidden flex flex-col gap-1.5"
             style={{
               opacity:    isDragging ? 0.4 : 1,
               outline:    isOver ? "2px solid var(--accent-primary)" : "none",
@@ -80,7 +82,7 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
                 alt={img.caption || `Image ${i + 1}`}
                 fill
                 className="object-cover"
-                sizes="140px"
+                sizes="180px"
                 unoptimized
               />
 
@@ -125,7 +127,7 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
               </button>
             </div>
 
-            {/* Caption input */}
+            {/* Caption */}
             <input
               type="text"
               value={img.caption}
@@ -136,6 +138,20 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
                 color:  "var(--text-secondary)",
                 border: "1px solid var(--border-subtle)",
                 fontFamily: "var(--font-mono)",
+              }}
+            />
+
+            {/* Author comment — fullscreen only */}
+            <textarea
+              value={img.authorComment}
+              onChange={(e) => onAuthorCommentChange(img.id, e.target.value)}
+              placeholder="Fullscreen comment (optional)"
+              rows={2}
+              className="w-full text-xs px-1.5 py-1 rounded bg-transparent outline-none resize-none"
+              style={{
+                color:  "var(--text-secondary)",
+                border: "1px solid var(--border-subtle)",
+                lineHeight: 1.5,
               }}
             />
           </div>

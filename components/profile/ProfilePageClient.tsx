@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Post, Author } from "@/lib/types";
 import { useApp } from "@/lib/context/AppContext";
 import WorkGrid from "@/components/ui/WorkGrid";
+import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
-import { ChevronLeft, Layers, BookMarked, Heart, Wrench, LogOut } from "lucide-react";
+import ProfileEditModal from "./ProfileEditModal";
+import { Camera, ChevronLeft, Layers, BookMarked, Heart, Wrench, LogOut, Loader2, Pencil } from "lucide-react";
 
 type Tab = "works" | "wip" | "liked" | "bookmarks";
 
@@ -21,18 +22,24 @@ type Props = {
   username?: string;
   allPosts?: Post[];
   onSignOut?: () => void;
+  onUpdateAvatar?: (file: File) => Promise<void>;
 };
 
 export default function ProfilePageClient({
-  author, authorPosts, totalLikes, totalSaves, isOwnProfile = false, username, allPosts = [], onSignOut,
+  author, authorPosts, totalLikes, totalSaves,
+  isOwnProfile = false, username, allPosts = [],
+  onSignOut, onUpdateAvatar,
 }: Props) {
   const t = useTranslations("profile");
   const { likedIds, savedIds } = useApp();
   const [activeTab, setActiveTab] = useState<Tab>("works");
+  const [uploading, setUploading]   = useState(false);
+  const [editOpen,  setEditOpen]    = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const wipPosts      = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
-  const likedPosts    = isOwnProfile ? allPosts.filter((p) => likedIds.has(p.id))    : [];
-  const bookmarkPosts = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id))    : [];
+  const likedPosts    = isOwnProfile ? allPosts.filter((p) => likedIds.has(p.id))  : [];
+  const bookmarkPosts = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id))  : [];
 
   const tabPosts: Record<Tab, Post[]> = {
     works:     authorPosts,
@@ -45,10 +52,22 @@ export default function ProfilePageClient({
     { key: "works",     label: t("tabs.works"),     icon: <Layers size={14} />,     count: authorPosts.length },
     { key: "wip",       label: t("tabs.wip"),        icon: <Wrench size={14} />,     count: wipPosts.length },
     ...(isOwnProfile ? [
-      { key: "liked" as Tab,     label: t("tabs.liked"),     icon: <Heart size={14} />,     count: likedPosts.length },
+      { key: "liked"     as Tab, label: t("tabs.liked"),     icon: <Heart size={14} />,     count: likedPosts.length },
       { key: "bookmarks" as Tab, label: t("tabs.bookmarks"), icon: <BookMarked size={14} />, count: bookmarkPosts.length },
     ] : []),
   ];
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdateAvatar) return;
+    setUploading(true);
+    try {
+      await onUpdateAvatar(file);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
 
   return (
     <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
@@ -66,18 +85,38 @@ export default function ProfilePageClient({
           className="rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-6"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
-          <div
-            className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden shrink-0"
-            style={{ border: "3px solid var(--accent-muted)" }}
-          >
-            <Image
-              src={author.avatarUrl || `https://picsum.photos/seed/${author.id}/96/96`}
-              alt={author.name}
-              fill
-              className="object-cover"
-              sizes="96px"
-              unoptimized={author.avatarUrl.startsWith("https://picsum.photos")}
-            />
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <div
+              className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden"
+              style={{ border: "3px solid var(--accent-muted)" }}
+            >
+              <UserAvatar src={author.avatarUrl} alt={author.name} fill />
+              {uploading && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
+                  <Loader2 size={22} className="animate-spin" style={{ color: "#fff" }} />
+                </div>
+              )}
+              {isOwnProfile && !uploading && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity"
+                  style={{ background: "rgba(0,0,0,0.55)" }}
+                  aria-label="Change profile photo"
+                >
+                  <Camera size={20} style={{ color: "#fff" }} />
+                </button>
+              )}
+            </div>
+            {isOwnProfile && (
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleAvatarChange}
+              />
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -90,12 +129,14 @@ export default function ProfilePageClient({
                   @{username}
                 </span>
               )}
-              <span
-                className="text-sm px-2 py-0.5 rounded"
-                style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
-              >
-                {author.country}
-              </span>
+              {author.country && (
+                <span
+                  className="text-sm px-2 py-0.5 rounded"
+                  style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+                >
+                  {author.country}
+                </span>
+              )}
               {isOwnProfile && (
                 <span
                   className="text-xs px-2 py-0.5 rounded font-semibold"
@@ -120,14 +161,29 @@ export default function ProfilePageClient({
             </div>
 
             {!isOwnProfile && <FollowButton authorId={author.id} followersCount={author.followersCount} />}
-            {isOwnProfile && onSignOut && (
-              <button
-                onClick={onSignOut}
-                className="flex items-center gap-1.5 text-sm hover:opacity-80 transition-opacity mt-1"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <LogOut size={14} /> Sign out
-              </button>
+            {isOwnProfile && (
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  onClick={() => setEditOpen(true)}
+                  className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+                  style={{
+                    background: "var(--bg-tertiary)",
+                    color:      "var(--text-secondary)",
+                    border:     "1px solid var(--border-subtle)",
+                  }}
+                >
+                  <Pencil size={13} /> Edit Profile
+                </button>
+                {onSignOut && (
+                  <button
+                    onClick={onSignOut}
+                    className="flex items-center gap-1.5 text-sm hover:opacity-80 transition-opacity"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    <LogOut size={14} /> Sign out
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -169,6 +225,14 @@ export default function ProfilePageClient({
         {/* Tab content */}
         <WorkGrid posts={tabPosts[activeTab]} />
       </div>
+
+      {editOpen && (
+        <ProfileEditModal
+          initialName={author.name}
+          initialBio={author.bio}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
     </div>
   );
 }

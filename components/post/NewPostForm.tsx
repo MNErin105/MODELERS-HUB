@@ -32,7 +32,7 @@ const TECHNIQUE_SUGGESTIONS = [
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 function createObjectURL(file: File): UploadedImage {
-  return { id: uid(), url: URL.createObjectURL(file), caption: "" };
+  return { id: uid(), url: URL.createObjectURL(file), caption: "", authorComment: "" };
 }
 
 // ── Layout helpers ────────────────────────────────────────────────────────────
@@ -122,6 +122,8 @@ export default function NewPostForm() {
   const deleteImage   = useCallback((id: string) => setCoverImages((p) => p.filter((i) => i.id !== id)), []);
   const updateCaption = useCallback((id: string, cap: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
+  const updateAuthorComment = useCallback((id: string, comment: string) =>
+    setCoverImages((p) => p.map((i) => i.id === id ? { ...i, authorComment: comment } : i)), []);
 
   // ── WIP handlers ────────────────────────────────────────────────────────────
   function addStep() { setWipSteps((p) => [...p, { id: uid(), title: "", description: "", images: [] }]); }
@@ -184,7 +186,9 @@ export default function NewPostForm() {
       title:           title.trim(),
       description:     description.trim(),
       thumbnailUrl:    coverImages[0].url,
-      images:          coverImages.map((img) => ({ url: img.url, caption: img.caption })),
+      images:          coverImages.map(({ url, caption, authorComment }) => ({
+        url, caption, ...(authorComment.trim() ? { authorComment: authorComment.trim() } : {}),
+      })),
       buildSteps:      buildSteps.length > 0 ? buildSteps : undefined,
       author,
       tags,
@@ -258,6 +262,7 @@ export default function NewPostForm() {
               onReorder={reorderImages}
               onDelete={deleteImage}
               onCaptionChange={updateCaption}
+              onAuthorCommentChange={updateAuthorComment}
             />
             {errors.images && <FieldError msg={errors.images} />}
             {coverImages.length > 0 && (
