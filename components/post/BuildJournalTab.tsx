@@ -122,17 +122,6 @@ export default function BuildJournalTab({ steps }: Props) {
         </div>
       </div>
 
-      {/* Future: AI FAQ placeholder */}
-      <div
-        className="mt-12 p-5 rounded-xl text-sm"
-        style={{ background: "var(--bg-overlay)", border: "1px dashed var(--border-muted)", color: "var(--text-muted)" }}
-      >
-        <p className="font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>
-          🔬 Technique archive
-        </p>
-        <p>Technique tagging and searchable build index — coming soon.</p>
-      </div>
-
       {/* Lightbox */}
       {lightbox && (
         <ImageLightbox

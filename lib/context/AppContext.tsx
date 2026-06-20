@@ -9,7 +9,7 @@ type AppState = {
   followedIds: Set<string>;
   toggleLike:   (postId: string) => Promise<void>;
   toggleSave:   (postId: string) => Promise<void>;
-  toggleFollow: (authorId: string) => void;
+  toggleFollow: (authorId: string) => Promise<void>;
 };
 
 const AppContext = createContext<AppState>({
@@ -18,7 +18,7 @@ const AppContext = createContext<AppState>({
   followedIds: new Set(),
   toggleLike:   async () => {},
   toggleSave:   async () => {},
-  toggleFollow: () => {},
+  toggleFollow: async () => {},
 });
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -28,27 +28,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load follows from localStorage (no DB table query needed here)
-    try {
-      setFollowedIds(new Set(JSON.parse(localStorage.getItem("mh-followed") || "[]")));
-    } catch {}
-
-    // Sync liked/saved from Supabase on auth change
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
       if (!session?.user) {
         setCurrentUserId(null);
         setLikedIds(new Set());
         setSavedIds(new Set());
+        setFollowedIds(new Set());
         return;
       }
       const uid = session.user.id;
       setCurrentUserId(uid);
-      const [{ data: likedData }, { data: savedData }] = await Promise.all([
+      const [{ data: likedData }, { data: savedData }, { data: followedData }] = await Promise.all([
         supabase.from("likes").select("post_id").eq("user_id", uid),
         supabase.from("bookmarks").select("post_id").eq("user_id", uid),
+        supabase.from("follows").select("following_id").eq("follower_id", uid),
       ]);
       setLikedIds(new Set((likedData ?? []).map((l) => l.post_id as string)));
       setSavedIds(new Set((savedData ?? []).map((b) => b.post_id as string)));
+      setFollowedIds(new Set((followedData ?? []).map((f) => f.following_id as string)));
     });
 
     return () => subscription.unsubscribe();
@@ -85,14 +82,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUserId, savedIds]);
 
-  const toggleFollow = useCallback((authorId: string) => {
+  const toggleFollow = useCallback(async (authorId: string) => {
+    if (!currentUserId) return;
+    const isFollowed = followedIds.has(authorId);
     setFollowedIds((prev) => {
       const next = new Set(prev);
-      next.has(authorId) ? next.delete(authorId) : next.add(authorId);
-      try { localStorage.setItem("mh-followed", JSON.stringify([...next])); } catch {}
+      isFollowed ? next.delete(authorId) : next.add(authorId);
       return next;
     });
-  }, []);
+    if (isFollowed) {
+      await supabase.from("follows").delete().match({ follower_id: currentUserId, following_id: authorId });
+    } else {
+      await supabase.from("follows").insert({ follower_id: currentUserId, following_id: authorId });
+    }
+  }, [currentUserId, followedIds]);
 
   return (
     <AppContext.Provider value={{

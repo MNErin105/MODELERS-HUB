@@ -224,14 +224,6 @@ export default function CommentsTab({ postId }: Props) {
           ))}
         </div>
       )}
-
-      <div
-        className="mt-10 p-5 rounded-xl text-sm"
-        style={{ background: "var(--bg-overlay)", border: "1px dashed var(--border-muted)", color: "var(--text-muted)" }}
-      >
-        <p className="font-semibold mb-1" style={{ color: "var(--text-secondary)" }}>🤖 AI FAQ</p>
-        <p>{t("comments.aiFaq")}</p>
-      </div>
     </div>
   );
 }

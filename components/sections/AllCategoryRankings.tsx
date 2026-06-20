@@ -152,7 +152,6 @@ export default function AllCategoryRankings({ posts }: Props) {
                 />
               )}
             </div>
-            <NeedMoreBuilders category={activeCategory} />
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -184,7 +183,6 @@ export default function AllCategoryRankings({ posts }: Props) {
                   size="small"
                 />
               )}
-              {ranked.length < 3 && <NeedMoreBuilders category={activeCategory} compact />}
             </div>
           </div>
         )}
@@ -213,22 +211,3 @@ function EmptyRanking({ category }: { category: Category }) {
   );
 }
 
-function NeedMoreBuilders({ category, compact }: { category: Category; compact?: boolean }) {
-  const t  = useTranslations("rankings");
-  const tc = useTranslations("category");
-  const name = tc(`names.${category.replace(/\s+/g, "_")}`);
-  return (
-    <div
-      className={`flex flex-col justify-center items-center rounded-xl gap-2 text-center ${compact ? "py-8" : "py-10 mt-4"}`}
-      style={{ background: "var(--bg-secondary)", border: "1px dashed var(--border-muted)" }}
-    >
-      <span className="text-2xl">{CATEGORY_ICONS[category]}</span>
-      <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-        {t("needBuildersTitle", { category: name })}
-      </p>
-      <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-        {t("needBuildersSubtitle")}
-      </p>
-    </div>
-  );
-}

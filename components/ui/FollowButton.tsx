@@ -13,9 +13,11 @@ export default function FollowButton({ authorId, followersCount }: Props) {
   const { followedIds, toggleFollow } = useApp();
   const followed = followedIds.has(authorId);
   const [animate, setAnimate] = useState(false);
+  const [delta, setDelta] = useState(0);
   const t = useTranslations("follow");
 
   function handleClick() {
+    setDelta((d) => d + (followed ? -1 : 1));
     toggleFollow(authorId);
     setAnimate(true);
     setTimeout(() => setAnimate(false), 200);
@@ -36,7 +38,7 @@ export default function FollowButton({ authorId, followersCount }: Props) {
     >
       {followed ? t("following") : t("follow")}
       <span className="ml-2 text-xs opacity-70">
-        {followersCount + (followed ? 1 : 0)}
+        {followersCount + delta}
       </span>
     </button>
   );

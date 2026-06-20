@@ -196,6 +196,14 @@ export async function getProfileById(id: string) {
   return data ?? null;
 }
 
+export async function getFollowersCount(userId: string): Promise<number> {
+  const { count } = await supabase
+    .from("follows")
+    .select("*", { count: "exact", head: true })
+    .eq("following_id", userId);
+  return count ?? 0;
+}
+
 // ── Comment queries ───────────────────────────────────────────────────────────
 
 export async function fetchComments(postId: string): Promise<Comment[]> {

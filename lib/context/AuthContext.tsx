@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Avoids conflict with NOT NULL constraints on username / display_name.
     await supabase
       .from("profiles")
-      .update({ avatar_url: baseUrl, updated_at: new Date().toISOString() })
+      .update({ avatar_url: baseUrl })
       .eq("id", user.id);
     // Cache-bust in local state so the browser re-fetches the new image immediately
     setUser((prev) =>
@@ -175,7 +175,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       display_name: name.trim(),
       bio:          bio.trim(),
       username:     username.trim(),
-      updated_at:   new Date().toISOString(),
     });
     if (error) {
       console.error("[updateProfile] Supabase error:", error);

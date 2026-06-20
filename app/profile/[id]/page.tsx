@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProfileById, getPostsByUserId } from "@/lib/supabase/queries";
+import { getProfileById, getPostsByUserId, getFollowersCount } from "@/lib/supabase/queries";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
 import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
 import type { Author } from "@/lib/types";
@@ -11,9 +11,10 @@ export default async function ProfilePage({ params }: Props) {
 
   if (id === "self") return <DynamicProfilePage />;
 
-  const [profile, authorPosts] = await Promise.all([
+  const [profile, authorPosts, followersCount] = await Promise.all([
     getProfileById(id),
     getPostsByUserId(id),
+    getFollowersCount(id),
   ]);
 
   if (!profile) return notFound();
@@ -24,7 +25,7 @@ export default async function ProfilePage({ params }: Props) {
     avatarUrl:      (profile.avatar_url as string | null) ?? "",
     country:        (profile.country as string | null) ?? "",
     bio:            (profile.bio as string | null) ?? "",
-    followersCount: 0,
+    followersCount: followersCount,
     followingCount: 0,
   };
 
