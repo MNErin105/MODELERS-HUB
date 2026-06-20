@@ -1,24 +1,33 @@
 import { notFound } from "next/navigation";
-import { posts } from "@/lib/dummy-data";
+import { getProfileById, getPostsByUserId } from "@/lib/supabase/queries";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
 import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
+import type { Author } from "@/lib/types";
 
 type Props = { params: Promise<{ id: string }> };
-
-export function generateStaticParams() {
-  const ids = [...new Set(posts.map((p) => p.author.id))];
-  return [...ids.map((id) => ({ id })), { id: "self" }];
-}
 
 export default async function ProfilePage({ params }: Props) {
   const { id } = await params;
 
   if (id === "self") return <DynamicProfilePage />;
 
-  const authorPosts = posts.filter((p) => p.author.id === id);
-  if (authorPosts.length === 0) notFound();
+  const [profile, authorPosts] = await Promise.all([
+    getProfileById(id),
+    getPostsByUserId(id),
+  ]);
 
-  const author     = authorPosts[0].author;
+  if (!profile) return notFound();
+
+  const author: Author = {
+    id:             profile.id as string,
+    name:           profile.display_name as string,
+    avatarUrl:      (profile.avatar_url as string | null) ?? "",
+    country:        (profile.country as string | null) ?? "",
+    bio:            (profile.bio as string | null) ?? "",
+    followersCount: 0,
+    followingCount: 0,
+  };
+
   const totalLikes = authorPosts.reduce((acc, p) => acc + p.likeCount, 0);
   const totalSaves = authorPosts.reduce((acc, p) => acc + p.saveCount, 0);
 
@@ -28,6 +37,7 @@ export default async function ProfilePage({ params }: Props) {
       authorPosts={authorPosts}
       totalLikes={totalLikes}
       totalSaves={totalSaves}
+      username={profile.username as string}
     />
   );
 }

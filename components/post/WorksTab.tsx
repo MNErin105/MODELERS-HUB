@@ -9,6 +9,7 @@ import SaveButton from "@/components/ui/SaveButton";
 import LikeButton from "@/components/ui/LikeButton";
 import FollowButton from "@/components/ui/FollowButton";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import UserAvatar from "@/components/ui/UserAvatar";
 import { categorySlug } from "@/lib/types";
 
 type Props = { post: Post };
@@ -102,7 +103,7 @@ export default function WorksTab({ post }: Props) {
         <div className="flex items-center gap-3">
           <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
-              <Image src={post.author.avatarUrl} alt={post.author.name} fill className="object-cover" sizes="40px" />
+              <UserAvatar src={post.author.avatarUrl} alt={post.author.name} fill />
             </div>
             <div>
               <p className="text-sm font-medium group-hover:underline" style={{ color: "var(--text-primary)" }}>

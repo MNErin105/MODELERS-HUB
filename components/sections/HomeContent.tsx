@@ -1,29 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
-import Image from "next/image";
 import Link from "next/link";
-import { Users } from "lucide-react";
-import { posts as dummyPosts } from "@/lib/dummy-data";
-import { Category } from "@/lib/types";
-import { useApp } from "@/lib/context/AppContext";
+import { Users, Loader2 } from "lucide-react";
+import UserAvatar from "@/components/ui/UserAvatar";
+import { Category, Post } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
-import FeaturedSection from "./FeaturedSection";
+import { getPostsForHome } from "@/lib/supabase/queries";
 import PopularSection from "./PopularSection";
 import NewArrivalsSection from "./NewArrivalsSection";
 import AllCategoryRankings from "./AllCategoryRankings";
 import WorkGrid from "@/components/ui/WorkGrid";
 import CategoryFilter from "@/components/ui/CategoryFilter";
 
-type SortMode = "new" | "popular";
-
 // ── People card ───────────────────────────────────────────────────────────────
 
 function PeopleCard({ user }: { user: UserProfile }) {
-  const href = user.id === "self" ? "/profile/self" : `/profile/${user.id}`;
+  const href = `/profile/${user.id}`;
   return (
     <Link
       href={href}
@@ -35,14 +30,7 @@ function PeopleCard({ user }: { user: UserProfile }) {
           className="relative w-11 h-11 rounded-full overflow-hidden shrink-0"
           style={{ border: "2px solid var(--accent-muted)" }}
         >
-          <Image
-            src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/44/44`}
-            alt={user.name}
-            fill
-            className="object-cover"
-            sizes="44px"
-            unoptimized
-          />
+          <UserAvatar src={user.avatarUrl} alt={user.name} fill />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-bold truncate" style={{ color: "var(--text-primary)" }}>{user.name}</p>
@@ -68,19 +56,30 @@ function PeopleCard({ user }: { user: UserProfile }) {
 export default function HomeContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const t = useTranslations("home");
 
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
-  const [sortMode, setSortMode] = useState<SortMode>("new");
-  const { userPosts } = useApp();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
-  const posts = useMemo(() => [...userPosts, ...dummyPosts], [userPosts]);
+  useEffect(() => {
+    getPostsForHome(200).then((data) => {
+      setPosts(data);
+      setLoading(false);
+    });
+  }, []);
 
-  // User search extras (only the auth user adds herself to the pool)
   const selfProfile = useMemo<UserProfile | null>(() => {
     if (!user) return null;
-    return { id: "self", username: user.username, name: user.name, avatarUrl: user.avatarUrl, country: user.country, bio: "", followersCount: 0 };
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      country: user.country,
+      bio: user.bio,
+      followersCount: 0,
+    };
   }, [user]);
 
   const matchingUsers = useMemo(
@@ -90,9 +89,7 @@ export default function HomeContent() {
 
   const filteredPosts = useMemo(() => {
     let result = posts;
-
     if (activeCategory) result = result.filter((p) => p.category === activeCategory);
-
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter(
@@ -103,22 +100,10 @@ export default function HomeContent() {
           p.category.toLowerCase().includes(q)
       );
     }
+    return [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [activeCategory, query, posts]);
 
-    if (sortMode === "popular") {
-      result = [...result].sort((a, b) => b.weeklyLikeCount - a.weeklyLikeCount);
-    } else {
-      result = [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    return result;
-  }, [activeCategory, query, sortMode, posts]);
-
-  const isFiltered = !!query.trim() || activeCategory !== null || sortMode !== "new";
-
-  const sortOptions: { key: SortMode; label: string }[] = [
-    { key: "new",     label: t("filters.new") },
-    { key: "popular", label: t("filters.popular") },
-  ];
+  const isFiltered = !!query.trim() || activeCategory !== null;
 
   return (
     <div style={{ background: "var(--bg-primary)" }}>
@@ -127,41 +112,12 @@ export default function HomeContent() {
         <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      {/* Sort / filter bar */}
-      <div
-        className="py-2 px-6"
-        style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-secondary)" }}
-      >
-        <div className="max-w-[1440px] mx-auto flex items-center gap-2">
-          <span className="text-xs shrink-0" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-            {t("filters.sortBy")}
-          </span>
-          <div className="flex gap-1">
-            {sortOptions.map((opt) => {
-              const active = sortMode === opt.key;
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => setSortMode(opt.key)}
-                  className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
-                  style={{
-                    background: active ? "var(--accent-primary)" : "transparent",
-                    color:      active ? "var(--bg-primary)"     : "var(--text-muted)",
-                    border:     active ? "1px solid var(--accent-primary)" : "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-32">
+          <Loader2 size={32} className="animate-spin" style={{ color: "var(--text-muted)" }} />
         </div>
-      </div>
-
-      {isFiltered ? (
+      ) : isFiltered ? (
         <section className="w-full py-10 px-6 max-w-[1440px] mx-auto">
-
-          {/* People results */}
           {matchingUsers.length > 0 && (
             <div className="mb-10">
               <div className="flex items-center gap-2 mb-4">
@@ -184,7 +140,6 @@ export default function HomeContent() {
             </div>
           )}
 
-          {/* Works results */}
           <p className="text-sm mb-6" style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}>
             {filteredPosts.length} {filteredPosts.length !== 1 ? "results" : "result"}
             {query && <> for &ldquo;{query}&rdquo;</>}
@@ -194,16 +149,26 @@ export default function HomeContent() {
           </p>
           <WorkGrid posts={filteredPosts} />
         </section>
+      ) : posts.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-32 gap-4">
+          <p className="text-lg" style={{ color: "var(--text-muted)" }}>No posts yet.</p>
+          <Link
+            href="/posts/new"
+            className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
+            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+          >
+            Be the first to post
+          </Link>
+        </div>
       ) : (
         <>
-          <FeaturedSection posts={posts} />
+          <NewArrivalsSection posts={posts} />
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <PopularSection posts={posts} />
           </div>
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <AllCategoryRankings posts={posts} />
           </div>
-          <NewArrivalsSection posts={posts} />
         </>
       )}
     </div>

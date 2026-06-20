@@ -1,20 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Send, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { CATEGORIES, Category, BuildStep } from "@/lib/types";
+import { CATEGORIES, Category } from "@/lib/types";
 import { CATEGORY_META } from "@/lib/types";
-import { useApp } from "@/lib/context/AppContext";
-import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
+import { useAuth } from "@/lib/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { CATEGORY_TO_DB } from "@/lib/supabase/queries";
 import ImageUploadZone from "./ImageUploadZone";
 import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
 import WIPStepEditor, { WIPStep } from "./WIPStepEditor";
 import TagInput from "./TagInput";
 
-// ── Suggested tags (technical proper nouns — kept in English for both locales) ─
+// ── Suggested tags ────────────────────────────────────────────────────────────
 const PAINT_SUGGESTIONS = [
   "Mr. Color", "Gaia Notes", "Tamiya Acrylic", "Vallejo", "Finisher's",
   "Mr. Surfacer", "AK Interactive", "Ammo by Mig", "Citadel", "Oil Paint",
@@ -31,8 +32,12 @@ const TECHNIQUE_SUGGESTIONS = [
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-function createObjectURL(file: File): UploadedImage {
+function createPreview(file: File): UploadedImage {
   return { id: uid(), url: URL.createObjectURL(file), caption: "", authorComment: "" };
+}
+
+function fileExt(file: File): string {
+  return file.name.split(".").pop()?.toLowerCase() ?? "jpg";
 }
 
 // ── Layout helpers ────────────────────────────────────────────────────────────
@@ -81,11 +86,10 @@ const inputStyle = {
 
 // ── Main form ─────────────────────────────────────────────────────────────────
 export default function NewPostForm() {
-  const t       = useTranslations("newPost");
-  const tc      = useTranslations("category");
-  const ta      = useTranslations("auth");
-  const router  = useRouter();
-  const { addPost } = useApp();
+  const t      = useTranslations("newPost");
+  const tc     = useTranslations("category");
+  const ta     = useTranslations("auth");
+  const router = useRouter();
   const { user, openLoginModal } = useAuth();
 
   // Core fields
@@ -94,33 +98,44 @@ export default function NewPostForm() {
   const [category,    setCategory]    = useState<Category>("Gunpla");
   const [kit,         setKit]         = useState("");
 
-  // Tags
+  // Tags / materials
   const [paints,     setPaints]     = useState<string[]>([]);
   const [tools,      setTools]      = useState<string[]>([]);
   const [techniques, setTechniques] = useState<string[]>([]);
   const [tags,       setTags]       = useState<string[]>([]);
 
-  // Images
+  // Images — preview objects in state, original Files in a ref map
   const [coverImages, setCoverImages] = useState<UploadedImage[]>([]);
+  const coverFileMap = useRef(new Map<string, File>());
 
   // WIP
-  const [hasWIP,    setHasWIP]    = useState(false);
-  const [wipSteps,  setWipSteps]  = useState<WIPStep[]>([
+  const [hasWIP,   setHasWIP]   = useState(false);
+  const [wipSteps, setWipSteps] = useState<WIPStep[]>([
     { id: uid(), title: "", description: "", images: [] },
   ]);
+  const wipFileMap = useRef(new Map<string, File>()); // id -> File for WIP images
 
   // Form state
   const [submitting, setSubmitting] = useState(false);
-  const [errors,     setErrors]     = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [errors,      setErrors]     = useState<Record<string, string>>({});
 
   // ── Image handlers ──────────────────────────────────────────────────────────
   const addCoverImages = useCallback((files: File[]) => {
-    setCoverImages((prev) => [...prev, ...files.map(createObjectURL)].slice(0, 20));
+    const newPreviews = files.map((file) => {
+      const preview = createPreview(file);
+      coverFileMap.current.set(preview.id, file);
+      return preview;
+    });
+    setCoverImages((prev) => [...prev, ...newPreviews].slice(0, 20));
   }, []);
 
-  const reorderImages = useCallback((imgs: UploadedImage[]) => setCoverImages(imgs), []);
-  const deleteImage   = useCallback((id: string) => setCoverImages((p) => p.filter((i) => i.id !== id)), []);
-  const updateCaption = useCallback((id: string, cap: string) =>
+  const reorderImages  = useCallback((imgs: UploadedImage[]) => setCoverImages(imgs), []);
+  const deleteImage    = useCallback((id: string) => {
+    coverFileMap.current.delete(id);
+    setCoverImages((p) => p.filter((i) => i.id !== id));
+  }, []);
+  const updateCaption  = useCallback((id: string, cap: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
   const updateAuthorComment = useCallback((id: string, comment: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, authorComment: comment } : i)), []);
@@ -136,12 +151,17 @@ export default function NewPostForm() {
   function addStepImages(stepId: string, files: File[]) {
     setWipSteps((p) => p.map((s) => {
       if (s.id !== stepId) return s;
-      const added = files.map(createObjectURL).slice(0, 5 - s.images.length);
+      const added = files.map((file) => {
+        const preview = createPreview(file);
+        wipFileMap.current.set(preview.id, file);
+        return preview;
+      }).slice(0, 5 - s.images.length);
       return { ...s, images: [...s.images, ...added] };
     }));
   }
 
   function removeStepImage(stepId: string, imgId: string) {
+    wipFileMap.current.delete(imgId);
     setWipSteps((p) => p.map((s) =>
       s.id === stepId ? { ...s, images: s.images.filter((i) => i.id !== imgId) } : s
     ));
@@ -160,63 +180,135 @@ export default function NewPostForm() {
   // ── Submit ──────────────────────────────────────────────────────────────────
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate() || !user) return;
     setSubmitting(true);
+    setSubmitError(null);
 
-    const buildSteps: BuildStep[] = hasWIP
-      ? wipSteps
-          .filter((s) => s.title.trim())
-          .map((s, i) => ({
-            id:          s.id,
-            stepNumber:  i + 1,
-            title:       s.title,
-            description: s.description,
-            date:        new Date().toISOString().split("T")[0],
-            images:      s.images.map((img) => ({ url: img.url, caption: img.caption })),
-          }))
-      : [];
+    try {
+      // Verify the session is still active before any DB writes.
+      // A session can expire while the user is filling out the form.
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("[NewPostForm] session uid:", session?.user?.id, "/ user.id:", user.id);
+      if (!session?.user) {
+        throw new Error("セッションが期限切れです。再度ログインしてから投稿してください。");
+      }
 
-    const author = user ? authUserToAuthor(user) : {
-      id: "self", name: "Anonymous", avatarUrl: "", country: "—",
-      bio: "", followersCount: 0, followingCount: 0,
-    };
+      // 1. INSERT post row to get the UUID
+      const { data: postRow, error: postError } = await supabase
+        .from("posts")
+        .insert({
+          user_id:     user.id,
+          title:       title.trim(),
+          description: description.trim(),
+          category:    CATEGORY_TO_DB[category] ?? "other",
+          kit_name:    kit.trim() || null,
+        })
+        .select("id")
+        .single();
 
-    const post = {
-      id:              `up-${Date.now()}`,
-      title:           title.trim(),
-      description:     description.trim(),
-      thumbnailUrl:    coverImages[0].url,
-      images:          coverImages.map(({ url, caption, authorComment }) => ({
-        url, caption, ...(authorComment.trim() ? { authorComment: authorComment.trim() } : {}),
-      })),
-      buildSteps:      buildSteps.length > 0 ? buildSteps : undefined,
-      author,
-      tags,
-      category,
-      kit:             kit.trim(),
-      paints,
-      tools,
-      techniques,
-      saveCount:       0,
-      likeCount:       0,
-      weeklyLikeCount: 0,
-      createdAt:       new Date().toISOString(),
-    };
+      if (postError || !postRow) {
+        throw new Error((postError as { message?: string })?.message ?? "Failed to create post.");
+      }
 
-    addPost(post);
-    router.push(`/posts/${post.id}`);
+      const postId = postRow.id as string;
+
+      // 2. Upload cover images
+      const imageUrls: string[] = [];
+      for (let i = 0; i < coverImages.length; i++) {
+        const img  = coverImages[i];
+        const file = coverFileMap.current.get(img.id);
+        if (!file) continue;
+        const path = `${user.id}/${postId}-${i}.${fileExt(file)}`;
+        const { error: upErr } = await supabase.storage
+          .from("post-images")
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) throw new Error((upErr as { message?: string })?.message ?? "Image upload failed.");
+        const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
+        imageUrls.push(urlData.publicUrl);
+      }
+
+      // 3. INSERT post_images
+      if (imageUrls.length > 0) {
+        const imageRows = coverImages.map((img, i) => ({
+          post_id:        postId,
+          image_url:      imageUrls[i] ?? "",
+          caption:        img.caption.trim() || null,
+          author_comment: img.authorComment.trim() || null,
+          sort_order:     i,
+        })).filter((r) => r.image_url);
+        await supabase.from("post_images").insert(imageRows);
+      }
+
+      // 4. Tags — upsert then link
+      if (tags.length > 0) {
+        for (const tagName of tags) {
+          const { data: tagRow } = await supabase
+            .from("tags")
+            .upsert({ name: tagName.trim() }, { onConflict: "name" })
+            .select("id")
+            .single();
+          if (tagRow?.id) {
+            await supabase.from("post_tags").insert({ post_id: postId, tag_id: tagRow.id });
+          }
+        }
+      }
+
+      // 5. Paints
+      if (paints.length > 0) {
+        await supabase.from("post_paints").insert(
+          paints.map((name) => ({ post_id: postId, paint_name: name }))
+        );
+      }
+
+      // 6. WIP journal entries
+      if (hasWIP) {
+        const validSteps = wipSteps.filter((s) => s.title.trim());
+        for (let i = 0; i < validSteps.length; i++) {
+          const step = validSteps[i];
+          let stepImageUrl: string | null = null;
+
+          // Upload the first WIP image for this step
+          const firstImg = step.images[0];
+          if (firstImg) {
+            const wipFile = wipFileMap.current.get(firstImg.id);
+            if (wipFile) {
+              const wipPath = `${user.id}/${postId}-wip-${i}.${fileExt(wipFile)}`;
+              const { error: wipErr } = await supabase.storage
+                .from("post-images")
+                .upload(wipPath, wipFile, { contentType: wipFile.type, upsert: false });
+              if (!wipErr) {
+                const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
+                stepImageUrl = wipUrlData.publicUrl;
+              }
+            }
+          }
+
+          await supabase.from("build_journal_entries").insert({
+            post_id:    postId,
+            title:      step.title.trim(),
+            content:    step.description.trim() || null,
+            image_url:  stepImageUrl,
+            sort_order: i,
+          });
+        }
+      }
+
+      router.push(`/posts/${postId}`);
+    } catch (err) {
+      console.error("[NewPostForm] submit error:", err);
+      setSubmitError(err instanceof Error ? err.message : "Failed to publish post.");
+      setSubmitting(false);
+    }
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ── Auth gate ────────────────────────────────────────────────────────────────
   if (!user) {
     return (
       <div
         className="flex flex-col items-center justify-center gap-6"
         style={{ background: "var(--bg-primary)", minHeight: "100vh" }}
       >
-        <p className="text-lg" style={{ color: "var(--text-muted)" }}>
-          {ta("loginRequired")}
-        </p>
+        <p className="text-lg" style={{ color: "var(--text-muted)" }}>{ta("loginRequired")}</p>
         <button
           onClick={openLoginModal}
           className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90"
@@ -232,7 +324,6 @@ export default function NewPostForm() {
     <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
       <div className="max-w-3xl mx-auto px-6 py-10">
 
-        {/* Page header */}
         <div className="mb-10">
           <Link
             href="/"
@@ -247,9 +338,7 @@ export default function NewPostForm() {
           >
             {t("pageTitle")}
           </h1>
-          <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
-            {t("subtitle")}
-          </p>
+          <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>{t("subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-10">
@@ -377,6 +466,12 @@ export default function NewPostForm() {
               />
             )}
           </Section>
+
+          {submitError && (
+            <p className="flex items-center gap-2 text-sm px-4 py-3 rounded-lg" style={{ background: "rgba(248,113,113,0.1)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }}>
+              <AlertCircle size={14} /> {submitError}
+            </p>
+          )}
 
           {/* ── Submit ───────────────────────────────────────────────────── */}
           <div

@@ -15,17 +15,17 @@ export default function SaveButton({ postId, count }: Props) {
   const { user, openLoginModal } = useAuth();
   const saved = savedIds.has(postId);
   const [animate, setAnimate] = useState(false);
+  const [localDelta, setLocalDelta] = useState(0);
 
-  function handleClick(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) { openLoginModal(); return; }
-    toggleSave(postId);
+    setLocalDelta((d) => (saved ? d - 1 : d + 1));
     setAnimate(true);
     setTimeout(() => setAnimate(false), 300);
+    await toggleSave(postId);
   }
-
-  const displayCount = count + (saved ? 1 : 0);
 
   return (
     <button
@@ -39,7 +39,7 @@ export default function SaveButton({ postId, count }: Props) {
       }}
     >
       <Bookmark size={14} fill={saved ? "currentColor" : "none"} strokeWidth={2} />
-      <span>{displayCount}</span>
+      <span>{count + localDelta}</span>
     </button>
   );
 }

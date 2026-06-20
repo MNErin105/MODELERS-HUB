@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect } from "react";
 import { Comment } from "@/lib/types";
-import { ChevronDown, ChevronUp, MessageSquare, Send, LogIn } from "lucide-react";
+import { ChevronDown, ChevronUp, MessageSquare, Send, LogIn, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/context/AuthContext";
 import UserAvatar from "@/components/ui/UserAvatar";
+import { supabase } from "@/lib/supabase";
+import { fetchComments } from "@/lib/supabase/queries";
 
-type Props = { comments: Comment[]; postId: string };
+type Props = { postId: string };
 
 function timeAgo(isoDate: string) {
   const diff = Date.now() - new Date(isoDate).getTime();
@@ -27,7 +28,7 @@ function ReplyThread({ comment }: { comment: Comment }) {
     <div>
       <div className="flex gap-3">
         <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 mt-0.5">
-          <Image src={comment.author.avatarUrl} alt={comment.author.name} fill className="object-cover" sizes="36px" />
+          <UserAvatar src={comment.author.avatarUrl} alt={comment.author.name} fill />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
@@ -61,7 +62,7 @@ function ReplyThread({ comment }: { comment: Comment }) {
           {comment.replies.map((reply) => (
             <div key={reply.id} className="flex gap-3">
               <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 mt-0.5">
-                <Image src={reply.author.avatarUrl} alt={reply.author.name} fill className="object-cover" sizes="28px" />
+                <UserAvatar src={reply.author.avatarUrl} alt={reply.author.name} fill />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
@@ -90,42 +91,60 @@ function ReplyThread({ comment }: { comment: Comment }) {
   );
 }
 
-export default function CommentsTab({ comments, postId }: Props) {
+export default function CommentsTab({ postId }: Props) {
   const t = useTranslations("post");
   const { user, openLoginModal } = useAuth();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
-  const [optimistic, setOptimistic] = useState<Comment[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    fetchComments(postId).then((c) => {
+      setComments(c);
+      setLoading(false);
+    });
+  }, [postId]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!newComment.trim() || !user) return;
-    const mock: Comment = {
-      id: `opt-${Date.now()}`,
-      author: {
-        id: user.id,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-        country: user.country,
-        bio: "",
-        followersCount: 0,
-        followingCount: 0,
-      },
-      content: newComment.trim(),
-      replies: [],
-      createdAt: new Date().toISOString(),
-    };
-    setOptimistic((prev) => [...prev, mock]);
-    setNewComment("");
-  }
+    if (!newComment.trim() || !user || submitting) return;
+    setSubmitting(true);
 
-  const allComments = [...comments, ...optimistic];
+    const { data, error } = await supabase
+      .from("comments")
+      .insert({ post_id: postId, user_id: user.id, content: newComment.trim() })
+      .select("id, content, created_at")
+      .single();
+
+    if (!error && data) {
+      const added: Comment = {
+        id:        data.id as string,
+        content:   data.content as string,
+        replies:   [],
+        createdAt: data.created_at as string,
+        author: {
+          id:             user.id,
+          name:           user.name,
+          avatarUrl:      user.avatarUrl,
+          country:        user.country,
+          bio:            user.bio,
+          followersCount: 0,
+          followingCount: 0,
+        },
+      };
+      setComments((prev) => [...prev, added]);
+      setNewComment("");
+    }
+    setSubmitting(false);
+  }
 
   return (
     <div className="max-w-2xl">
       <div className="mb-8 flex items-center gap-3">
         <MessageSquare size={18} style={{ color: "var(--accent-primary)" }} />
         <h2 className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>
-          {t("comments.count", { count: allComments.length })}
+          {t("comments.count", { count: comments.length })}
         </h2>
       </div>
 
@@ -153,11 +172,12 @@ export default function CommentsTab({ comments, postId }: Props) {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!newComment.trim()}
+                    disabled={!newComment.trim() || submitting}
                     className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-40"
                     style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
                   >
-                    <Send size={14} /> {t("comments.post")}
+                    {submitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                    {t("comments.post")}
                   </button>
                 </div>
               </div>
@@ -183,13 +203,17 @@ export default function CommentsTab({ comments, postId }: Props) {
       </div>
 
       {/* Comments list */}
-      {allComments.length === 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 size={24} className="animate-spin" style={{ color: "var(--text-muted)" }} />
+        </div>
+      ) : comments.length === 0 ? (
         <div className="text-center py-16">
           <p style={{ color: "var(--text-muted)" }}>{t("comments.empty")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          {allComments.map((comment) => (
+          {comments.map((comment) => (
             <div
               key={comment.id}
               className="p-4 rounded-xl"

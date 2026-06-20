@@ -1,21 +1,19 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
-import { useApp } from "@/lib/context/AppContext";
-import { posts as dummyPosts } from "@/lib/dummy-data";
+import { getPostsByUserId, getPostsForHome } from "@/lib/supabase/queries";
 import ProfilePageClient from "./ProfilePageClient";
+import type { Post } from "@/lib/types";
 
 export default function DynamicProfilePage() {
   const router = useRouter();
   const { user, loading, signOut, updateAvatar } = useAuth();
-  const { userPosts } = useApp();
-
-  // allPosts is used ONLY by Liked / Bookmarks tabs (need the full catalogue
-  // to look up which posts the user has liked or saved).
-  const allPosts = useMemo(() => [...userPosts, ...dummyPosts], [userPosts]);
+  const [ownPosts,  setOwnPosts]  = useState<Post[]>([]);
+  const [allPosts,  setAllPosts]  = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -23,8 +21,19 @@ export default function DynamicProfilePage() {
     }
   }, [loading, user, router]);
 
-  // Show spinner while auth is loading or while redirect is in flight.
-  if (loading || !user) {
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      getPostsByUserId(user.id),
+      getPostsForHome(100),
+    ]).then(([owned, all]) => {
+      setOwnPosts(owned);
+      setAllPosts(all);
+      setPostsLoading(false);
+    });
+  }, [user?.id]);
+
+  if (loading || !user || postsLoading) {
     return (
       <div
         className="flex items-center justify-center"
@@ -36,13 +45,13 @@ export default function DynamicProfilePage() {
   }
 
   const author     = authUserToAuthor(user);
-  const totalLikes = userPosts.reduce((acc, p) => acc + p.likeCount, 0);
-  const totalSaves = userPosts.reduce((acc, p) => acc + p.saveCount, 0);
+  const totalLikes = ownPosts.reduce((acc, p) => acc + p.likeCount, 0);
+  const totalSaves = ownPosts.reduce((acc, p) => acc + p.saveCount, 0);
 
   return (
     <ProfilePageClient
       author={author}
-      authorPosts={userPosts}
+      authorPosts={ownPosts}
       totalLikes={totalLikes}
       totalSaves={totalSaves}
       isOwnProfile

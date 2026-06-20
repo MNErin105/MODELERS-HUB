@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Post } from "@/lib/types";
 import { RANK_STYLE } from "@/lib/ranking";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 type Rank = 0 | 1 | 2; // 0-indexed for array access
 
@@ -64,7 +65,7 @@ export default function PodiumRankCard({ post, rank, score, size }: Props) {
             </h3>
             <div className="flex items-center gap-2">
               <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0">
-                <Image src={post.author.avatarUrl} alt={post.author.name} fill className="object-cover" sizes="28px" />
+                <UserAvatar src={post.author.avatarUrl} alt={post.author.name} fill />
               </div>
               <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{post.author.name}</span>
               <span
@@ -129,7 +130,7 @@ export default function PodiumRankCard({ post, rank, score, size }: Props) {
         </h3>
         <div className="flex items-center gap-2 mt-auto">
           <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0">
-            <Image src={post.author.avatarUrl} alt={post.author.name} fill className="object-cover" sizes="20px" />
+            <UserAvatar src={post.author.avatarUrl} alt={post.author.name} fill />
           </div>
           <span className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
             {post.author.name}

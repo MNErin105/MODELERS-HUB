@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { posts } from "@/lib/dummy-data";
 import { CATEGORIES, categorySlug, slugToCategory } from "@/lib/types";
+import { getPostsForHome } from "@/lib/supabase/queries";
 import CategoryPageClient from "@/components/category/CategoryPageClient";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -14,13 +14,14 @@ export default async function CategoryPage({ params }: Props) {
   const category = slugToCategory(slug);
   if (!category) notFound();
 
-  const categoryPosts = posts.filter((p) => p.category === category);
+  const allPosts      = await getPostsForHome(200);
+  const categoryPosts = allPosts.filter((p) => p.category === category);
 
   return (
     <CategoryPageClient
       category={category}
       categoryPosts={categoryPosts}
-      allPosts={posts}
+      allPosts={allPosts}
     />
   );
 }

@@ -47,12 +47,7 @@ export default function AllCategoryRankings({ posts }: Props) {
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
           <Trophy size={22} style={{ color: "var(--accent-primary)" }} />
-          <h2
-            className="text-3xl font-bold tracking-wider"
-            style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-          >
-            {t("title")}
-          </h2>
+          <h2 className="section-heading">{t("title")}</h2>
         </div>
 
         {/* Period selector */}

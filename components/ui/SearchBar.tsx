@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Search, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/context/AuthContext";
-import { searchUsers, DUMMY_USER_PROFILES, UserProfile } from "@/lib/users";
+import { searchUsers, UserProfile } from "@/lib/users";
 
 function UserDropdownItem({ user, onClick }: { user: UserProfile; onClick: () => void }) {
   const href = user.id === "self" ? "/profile/self" : `/profile/${user.id}`;
@@ -59,21 +59,6 @@ export default function SearchBar() {
   const [focused, setFocused] = useState(false);
   const mounted   = useRef(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
-
-  // All users: dummies + current auth user (if any)
-  const allUsers = useMemo<UserProfile[]>(() => {
-    if (!user) return DUMMY_USER_PROFILES;
-    const selfProfile: UserProfile = {
-      id:             "self",
-      username:       user.username,
-      name:           user.name,
-      avatarUrl:      user.avatarUrl,
-      country:        user.country,
-      bio:            "",
-      followersCount: 0,
-    };
-    return [selfProfile, ...DUMMY_USER_PROFILES];
-  }, [user]);
 
   const userResults = useMemo(
     () => (value.trim() ? searchUsers(value, user ? [{ id: "self", username: user.username, name: user.name, avatarUrl: user.avatarUrl, country: user.country, bio: "", followersCount: 0 }] : []).slice(0, 5) : []),

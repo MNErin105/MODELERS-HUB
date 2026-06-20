@@ -94,6 +94,16 @@
  *  BASE
  * ════════════════════════════════════════════════════════════════════════ */
 
+/* ── Shared section headings (New Arrivals / Popular Works / Weekly Rankings) */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 1.875rem;    /* text-3xl */
+  font-weight: 700;
+  letter-spacing: 0.05em; /* tracking-wider */
+  color: var(--text-primary);
+  line-height: 1;
+}
+
 html {
   scroll-padding-top: 100px;
 }

@@ -9,6 +9,7 @@ import WorkGrid from "@/components/ui/WorkGrid";
 import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
+import AvatarCropModal from "./AvatarCropModal";
 import { Camera, ChevronLeft, Layers, BookMarked, Heart, Wrench, LogOut, Loader2, Pencil } from "lucide-react";
 
 type Tab = "works" | "wip" | "liked" | "bookmarks";
@@ -35,6 +36,7 @@ export default function ProfilePageClient({
   const [activeTab, setActiveTab] = useState<Tab>("works");
   const [uploading, setUploading]   = useState(false);
   const [editOpen,  setEditOpen]    = useState(false);
+  const [cropSrc,   setCropSrc]     = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const wipPosts      = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
@@ -57,16 +59,33 @@ export default function ProfilePageClient({
     ] : []),
   ];
 
-  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !onUpdateAvatar) return;
+    if (!file) return;
+    // Open crop modal instead of uploading immediately.
+    // Reset the input here so the same file can be re-selected after cancel.
+    const objectUrl = URL.createObjectURL(file);
+    e.target.value = "";
+    setCropSrc(objectUrl);
+  }
+
+  async function handleCropApply(croppedFile: File) {
+    if (!onUpdateAvatar) return;
+    // Capture before clearing state, then revoke
+    const src = cropSrc;
+    setCropSrc(null);
+    if (src) URL.revokeObjectURL(src);
     setUploading(true);
     try {
-      await onUpdateAvatar(file);
+      await onUpdateAvatar(croppedFile);
     } finally {
       setUploading(false);
-      e.target.value = "";
     }
+  }
+
+  function handleCropCancel() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   }
 
   return (
@@ -230,7 +249,16 @@ export default function ProfilePageClient({
         <ProfileEditModal
           initialName={author.name}
           initialBio={author.bio}
+          initialUsername={username ?? ""}
           onClose={() => setEditOpen(false)}
+        />
+      )}
+
+      {cropSrc && (
+        <AvatarCropModal
+          imageSrc={cropSrc}
+          onApply={handleCropApply}
+          onCancel={handleCropCancel}
         />
       )}
     </div>

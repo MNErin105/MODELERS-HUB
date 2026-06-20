@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Bookmark, Heart } from "lucide-react";
 import { Post, Category } from "@/lib/types";
 import { useApp } from "@/lib/context/AppContext";
+import UserAvatar from "@/components/ui/UserAvatar";
 
 /**
  * A badge shown in the top-right corner of the card image.
@@ -121,7 +122,7 @@ export default function PostCard({ post, badge }: Props) {
 
           <div className="flex items-center gap-2">
             <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0">
-              <Image src={post.author.avatarUrl} alt={post.author.name} fill className="object-cover" sizes="20px" />
+              <UserAvatar src={post.author.avatarUrl} alt={post.author.name} fill />
             </div>
             <span className="text-xs flex-1 truncate" style={{ color: "var(--text-secondary)" }}>
               {post.author.name}

@@ -24,7 +24,7 @@ type AuthState = {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   updateAvatar: (file: File) => Promise<void>;
-  updateProfile: (data: { name: string; bio: string }) => Promise<void>;
+  updateProfile: (data: { name: string; bio: string; username: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState>({
@@ -53,11 +53,11 @@ async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
   const meta = supabaseUser.user_metadata as Record<string, string>;
   const email = supabaseUser.email ?? "";
   const username =
-    email.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 20) ||
-    "modeler";
+    email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 17) ||
+    "user";
   const base: AuthUser = {
     id:        supabaseUser.id,
-    username,
+    username:  username.length >= 3 ? username : username.padEnd(3, "0"),
     name:      meta.full_name ?? meta.name ?? "Modeler",
     email,
     avatarUrl: getAvatarUrl(supabaseUser.id),
@@ -67,17 +67,45 @@ async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, bio, avatar_url")
+    .select("display_name, bio, avatar_url, username")
     .eq("id", supabaseUser.id)
     .single();
 
-  if (!profile) return base;
+  if (!profile) {
+    // Trigger may not have fired (user pre-dates the migration).
+    // Attempt to create the profiles row now so FK constraints pass.
+    await createMissingProfile(supabaseUser.id, base);
+    return base;
+  }
   return {
     ...base,
+    username:  profile.username     ?? base.username,
     name:      profile.display_name ?? base.name,
     bio:       profile.bio          ?? "",
     avatarUrl: profile.avatar_url   ?? base.avatarUrl,
   };
+}
+
+// Creates a profiles row for users whose handle_new_user trigger didn't fire.
+// Retries up to 10 times with a numeric suffix on username collisions.
+async function createMissingProfile(userId: string, base: AuthUser): Promise<void> {
+  const baseUname = base.username;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate =
+      attempt === 0 ? baseUname : `${baseUname.slice(0, 17)}${attempt}`;
+    const { error } = await supabase.from("profiles").insert({
+      id:           userId,
+      username:     candidate,
+      display_name: base.name,
+    });
+    if (!error) return;
+    // 23505 = unique_violation — try next suffix
+    if ((error as { code?: string }).code !== "23505") {
+      console.error("[createMissingProfile]", error);
+      return;
+    }
+  }
+  console.error("[createMissingProfile] Could not find a unique username after 10 attempts.");
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -122,31 +150,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.storage
       .from("avatars")
       .upload(user.id, file, { upsert: true, contentType: file.type });
-    if (error) throw error;
+    if (error) {
+      console.error("[updateAvatar] Storage error:", error);
+      throw new Error((error as { message?: string }).message ?? "Failed to upload avatar.");
+    }
     const { data } = supabase.storage.from("avatars").getPublicUrl(user.id);
     const baseUrl = data.publicUrl;
-    // Sync to profiles table (base URL without cache-buster)
-    await supabase.from("profiles").upsert({
-      id:         user.id,
-      avatar_url: baseUrl,
-      updated_at: new Date().toISOString(),
-    });
+    // UPDATE only — row exists because buildAuthUser ensures it via createMissingProfile.
+    // Avoids conflict with NOT NULL constraints on username / display_name.
+    await supabase
+      .from("profiles")
+      .update({ avatar_url: baseUrl, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
     // Cache-bust in local state so the browser re-fetches the new image immediately
     setUser((prev) =>
       prev ? { ...prev, avatarUrl: `${baseUrl}?t=${Date.now()}` } : null
     );
   }, [user]);
 
-  const updateProfile = useCallback(async ({ name, bio }: { name: string; bio: string }) => {
+  const updateProfile = useCallback(async ({ name, bio, username }: { name: string; bio: string; username: string }) => {
     if (!user) return;
     const { error } = await supabase.from("profiles").upsert({
       id:           user.id,
       display_name: name.trim(),
       bio:          bio.trim(),
+      username:     username.trim(),
       updated_at:   new Date().toISOString(),
     });
-    if (error) throw error;
-    setUser((prev) => prev ? { ...prev, name: name.trim(), bio: bio.trim() } : null);
+    if (error) {
+      console.error("[updateProfile] Supabase error:", error);
+      // PostgreSQL unique constraint violation — username already taken
+      if ((error as { code?: string }).code === "23505") {
+        throw new Error("This username is already taken.");
+      }
+      // Wrap PostgrestError (plain object) in Error so catch blocks get .message
+      throw new Error((error as { message?: string }).message ?? "Failed to update profile.");
+    }
+    setUser((prev) =>
+      prev ? { ...prev, name: name.trim(), bio: bio.trim(), username: username.trim() } : null
+    );
   }, [user]);
 
   return (

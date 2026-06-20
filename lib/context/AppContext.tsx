@@ -1,71 +1,89 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { Post, Author } from "@/lib/types";
-
-export const SELF_AUTHOR: Author = {
-  id: "self",
-  name: "You",
-  avatarUrl: "",
-  country: "JP",
-  bio: "",
-  followersCount: 0,
-  followingCount: 0,
-};
+import { supabase } from "@/lib/supabase";
 
 type AppState = {
   likedIds:    Set<string>;
   savedIds:    Set<string>;
   followedIds: Set<string>;
-  userPosts:   Post[];
-  toggleLike:   (postId: string)  => void;
-  toggleSave:   (postId: string)  => void;
+  toggleLike:   (postId: string) => Promise<void>;
+  toggleSave:   (postId: string) => Promise<void>;
   toggleFollow: (authorId: string) => void;
-  addPost:      (post: Post)      => void;
 };
 
 const AppContext = createContext<AppState>({
   likedIds:    new Set(),
   savedIds:    new Set(),
   followedIds: new Set(),
-  userPosts:   [],
-  toggleLike:   () => {},
-  toggleSave:   () => {},
+  toggleLike:   async () => {},
+  toggleSave:   async () => {},
   toggleFollow: () => {},
-  addPost:      () => {},
 });
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [likedIds,    setLikedIds]    = useState<Set<string>>(new Set());
   const [savedIds,    setSavedIds]    = useState<Set<string>>(new Set());
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
-  const [userPosts,   setUserPosts]   = useState<Post[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Load follows from localStorage (no DB table query needed here)
     try {
-      setLikedIds(new Set(JSON.parse(localStorage.getItem("mh-liked")    || "[]")));
-      setSavedIds(new Set(JSON.parse(localStorage.getItem("mh-saved")    || "[]")));
       setFollowedIds(new Set(JSON.parse(localStorage.getItem("mh-followed") || "[]")));
     } catch {}
+
+    // Sync liked/saved from Supabase on auth change
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+      if (!session?.user) {
+        setCurrentUserId(null);
+        setLikedIds(new Set());
+        setSavedIds(new Set());
+        return;
+      }
+      const uid = session.user.id;
+      setCurrentUserId(uid);
+      const [{ data: likedData }, { data: savedData }] = await Promise.all([
+        supabase.from("likes").select("post_id").eq("user_id", uid),
+        supabase.from("bookmarks").select("post_id").eq("user_id", uid),
+      ]);
+      setLikedIds(new Set((likedData ?? []).map((l) => l.post_id as string)));
+      setSavedIds(new Set((savedData ?? []).map((b) => b.post_id as string)));
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const toggleLike = useCallback((postId: string) => {
+  const toggleLike = useCallback(async (postId: string) => {
+    if (!currentUserId) return;
+    const isLiked = likedIds.has(postId);
+    // Optimistic update
     setLikedIds((prev) => {
       const next = new Set(prev);
-      next.has(postId) ? next.delete(postId) : next.add(postId);
-      try { localStorage.setItem("mh-liked", JSON.stringify([...next])); } catch {}
+      isLiked ? next.delete(postId) : next.add(postId);
       return next;
     });
-  }, []);
+    if (isLiked) {
+      await supabase.from("likes").delete().match({ post_id: postId, user_id: currentUserId });
+    } else {
+      await supabase.from("likes").insert({ post_id: postId, user_id: currentUserId });
+    }
+  }, [currentUserId, likedIds]);
 
-  const toggleSave = useCallback((postId: string) => {
+  const toggleSave = useCallback(async (postId: string) => {
+    if (!currentUserId) return;
+    const isSaved = savedIds.has(postId);
     setSavedIds((prev) => {
       const next = new Set(prev);
-      next.has(postId) ? next.delete(postId) : next.add(postId);
-      try { localStorage.setItem("mh-saved", JSON.stringify([...next])); } catch {}
+      isSaved ? next.delete(postId) : next.add(postId);
       return next;
     });
-  }, []);
+    if (isSaved) {
+      await supabase.from("bookmarks").delete().match({ post_id: postId, user_id: currentUserId });
+    } else {
+      await supabase.from("bookmarks").insert({ post_id: postId, user_id: currentUserId });
+    }
+  }, [currentUserId, savedIds]);
 
   const toggleFollow = useCallback((authorId: string) => {
     setFollowedIds((prev) => {
@@ -76,14 +94,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const addPost = useCallback((post: Post) => {
-    setUserPosts((prev) => [post, ...prev]);
-  }, []);
-
   return (
     <AppContext.Provider value={{
-      likedIds, savedIds, followedIds, userPosts,
-      toggleLike, toggleSave, toggleFollow, addPost,
+      likedIds, savedIds, followedIds,
+      toggleLike, toggleSave, toggleFollow,
     }}>
       {children}
     </AppContext.Provider>

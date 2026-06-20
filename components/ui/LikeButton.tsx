@@ -15,17 +15,19 @@ export default function LikeButton({ postId, count }: Props) {
   const { user, openLoginModal } = useAuth();
   const liked = likedIds.has(postId);
   const [animate, setAnimate] = useState(false);
+  // Tracks in-session changes so the displayed count stays consistent
+  // regardless of what the DB count already includes.
+  const [localDelta, setLocalDelta] = useState(0);
 
-  function handleClick(e: React.MouseEvent) {
+  async function handleClick(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) { openLoginModal(); return; }
-    toggleLike(postId);
+    setLocalDelta((d) => (liked ? d - 1 : d + 1));
     setAnimate(true);
     setTimeout(() => setAnimate(false), 300);
+    await toggleLike(postId);
   }
-
-  const displayCount = count + (liked ? 1 : 0);
 
   return (
     <button
@@ -39,7 +41,7 @@ export default function LikeButton({ postId, count }: Props) {
       }}
     >
       <Heart size={14} fill={liked ? "currentColor" : "none"} strokeWidth={2} />
-      <span>{displayCount}</span>
+      <span>{count + localDelta}</span>
     </button>
   );
 }

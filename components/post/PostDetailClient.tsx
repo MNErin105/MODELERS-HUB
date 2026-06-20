@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Post, BuildStep, Comment } from "@/lib/types";
+import { Post, BuildStep } from "@/lib/types";
 import { ChevronLeft, Image as ImageIcon, BookOpen, MessageSquare } from "lucide-react";
 import WorksTab from "./WorksTab";
 import BuildJournalTab from "./BuildJournalTab";
@@ -14,18 +14,17 @@ type Tab = "works" | "journal" | "comments";
 type Props = {
   post: Post;
   buildSteps: BuildStep[];
-  comments: Comment[];
 };
 
-export default function PostDetailClient({ post, buildSteps, comments }: Props) {
+export default function PostDetailClient({ post, buildSteps }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("post");
   const activeTab = (searchParams.get("tab") as Tab) ?? "works";
 
-  const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-    { id: "works",    label: t("tabs.works"),   icon: ImageIcon },
-    { id: "journal",  label: t("tabs.journal"),  icon: BookOpen },
+  const TABS: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
+    { id: "works",   label: t("tabs.works"),   icon: ImageIcon },
+    { id: "journal", label: t("tabs.journal"),  icon: BookOpen,  count: buildSteps.length },
     { id: "comments", label: t("tabs.comments"), icon: MessageSquare },
   ];
 
@@ -50,14 +49,10 @@ export default function PostDetailClient({ post, buildSteps, comments }: Props) 
       </div>
 
       {/* ── Tab bar ─────────────────────────────────────────────────── */}
-      <div
-        className="sticky z-40 w-full"
-        style={{ top: "100px", background: "rgba(10,10,11,0.9)", borderBottom: "1px solid var(--border-subtle)", backdropFilter: "blur(8px)" }}
-      >
+      <div className="w-full" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <div className="max-w-[1440px] mx-auto px-6">
           <div className="flex gap-0">
-            {TABS.map(({ id, label, icon: Icon }) => {
-              const count = id === "journal" ? buildSteps.length : id === "comments" ? comments.length : null;
+            {TABS.map(({ id, label, icon: Icon, count }) => {
               const isActive = activeTab === id;
               return (
                 <button
@@ -70,15 +65,17 @@ export default function PostDetailClient({ post, buildSteps, comments }: Props) 
                 >
                   <Icon size={15} />
                   {label}
-                  {count !== null && count > 0 && (
+                  {count !== undefined && count > 0 && (
                     <span
                       className="text-xs px-1.5 py-0.5 rounded-full font-mono"
-                      style={{ background: isActive ? "var(--accent-muted)" : "var(--bg-tertiary)", color: isActive ? "var(--accent-primary)" : "var(--text-muted)" }}
+                      style={{
+                        background: isActive ? "var(--accent-muted)" : "var(--bg-tertiary)",
+                        color: isActive ? "var(--accent-primary)" : "var(--text-muted)",
+                      }}
                     >
                       {count}
                     </span>
                   )}
-                  {/* Active underline */}
                   {isActive && (
                     <span
                       className="absolute bottom-0 left-0 right-0 h-0.5"
@@ -94,9 +91,9 @@ export default function PostDetailClient({ post, buildSteps, comments }: Props) 
 
       {/* ── Tab content ─────────────────────────────────────────────── */}
       <div className="max-w-[1440px] mx-auto px-6 py-8">
-        {activeTab === "works" && <WorksTab post={post} />}
-        {activeTab === "journal" && <BuildJournalTab steps={buildSteps} />}
-        {activeTab === "comments" && <CommentsTab comments={comments} postId={post.id} />}
+        {activeTab === "works"    && <WorksTab post={post} />}
+        {activeTab === "journal"  && <BuildJournalTab steps={buildSteps} />}
+        {activeTab === "comments" && <CommentsTab postId={post.id} />}
       </div>
     </div>
   );
