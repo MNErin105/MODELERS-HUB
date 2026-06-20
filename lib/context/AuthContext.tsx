@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Author } from "@/lib/types";
 
 export type AuthUser = {
