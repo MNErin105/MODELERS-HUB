@@ -1,35 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
-import { Search, Users } from "lucide-react";
+import { Search, User, Layers } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useAuth } from "@/lib/context/AuthContext";
-import { searchUsers, UserProfile } from "@/lib/users";
+import { searchProfiles, searchPostsQuick } from "@/lib/supabase/queries";
+import type { QuickUser, QuickPost } from "@/lib/supabase/queries";
+import UserAvatar from "@/components/ui/UserAvatar";
 
-function UserDropdownItem({ user, onClick }: { user: UserProfile; onClick: () => void }) {
-  const href = user.id === "self" ? "/profile/self" : `/profile/${user.id}`;
+// ── Dropdown items ────────────────────────────────────────────────────────────
+
+function UserItem({ user, onClick }: { user: QuickUser; onClick: () => void }) {
   return (
     <Link
-      href={href}
+      href={`/profile/${user.id}`}
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 transition-colors hover:opacity-80"
+      className="flex items-center gap-3 px-4 py-2.5 transition-opacity hover:opacity-70"
       style={{ borderBottom: "1px solid var(--border-subtle)" }}
     >
       <div
-        className="relative w-9 h-9 rounded-full overflow-hidden shrink-0"
+        className="relative w-8 h-8 rounded-full overflow-hidden shrink-0"
         style={{ border: "1px solid var(--border-subtle)" }}
       >
-        <Image
-          src={user.avatarUrl || `https://picsum.photos/seed/${user.id}/36/36`}
-          alt={user.name}
-          fill
-          className="object-cover"
-          sizes="36px"
-          unoptimized
-        />
+        <UserAvatar src={user.avatarUrl} alt={user.name} fill />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
@@ -37,53 +31,118 @@ function UserDropdownItem({ user, onClick }: { user: UserProfile; onClick: () =>
         </p>
         <p className="text-xs truncate" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
           @{user.username}
-          {user.country && (
-            <span className="ml-2 opacity-60">· {user.country}</span>
-          )}
+          {user.country && <span className="ml-2 opacity-60">· {user.country}</span>}
         </p>
       </div>
-      <span className="text-xs shrink-0" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-        {user.followersCount.toLocaleString()} followers
+    </Link>
+  );
+}
+
+function PostItem({ post, onClick }: { post: QuickPost; onClick: () => void }) {
+  return (
+    <Link
+      href={`/posts/${post.id}`}
+      onClick={onClick}
+      className="flex items-center gap-3 px-4 py-2.5 transition-opacity hover:opacity-70"
+      style={{ borderBottom: "1px solid var(--border-subtle)" }}
+    >
+      {post.thumbnailUrl ? (
+        <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={post.thumbnailUrl} alt="" className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <div
+          className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
+          style={{ background: "var(--bg-tertiary)" }}
+        >
+          <Layers size={14} style={{ color: "var(--text-muted)" }} />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+          {post.title}
+        </p>
+        {post.kit && (
+          <p className="text-xs truncate" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+            {post.kit}
+          </p>
+        )}
+      </div>
+      <span
+        className="text-xs shrink-0 px-1.5 py-0.5 rounded"
+        style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+      >
+        {post.category}
       </span>
     </Link>
   );
 }
 
+function SectionHeader({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-4 py-1.5"
+      style={{ background: "var(--bg-overlay)", borderBottom: "1px solid var(--border-subtle)" }}
+    >
+      {icon}
+      <span
+        className="text-xs font-semibold uppercase tracking-widest"
+        style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function SearchBar() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const t            = useTranslations("search");
-  const { user }     = useAuth();
 
-  const [value,   setValue]   = useState(searchParams.get("q") ?? "");
-  const [focused, setFocused] = useState(false);
-  const mounted   = useRef(false);
+  const [value,       setValue]       = useState(searchParams.get("q") ?? "");
+  const [focused,     setFocused]     = useState(false);
+  const [userResults, setUserResults] = useState<QuickUser[]>([]);
+  const [postResults, setPostResults] = useState<QuickPost[]>([]);
+
+  const mounted    = useRef(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const userResults = useMemo(
-    () => (value.trim() ? searchUsers(value, user ? [{ id: "self", username: user.username, name: user.name, avatarUrl: user.avatarUrl, country: user.country, bio: "", followersCount: 0 }] : []).slice(0, 5) : []),
-    [value, user]
-  );
-
-  const showDropdown = focused && userResults.length > 0;
-
+  // ── URL push (drives HomeContent post filter) ─────────────────────────────
   const push = useCallback(
     (q: string) => {
       const params = new URLSearchParams();
       if (q) params.set("q", q);
       router.push(q ? `/?${params.toString()}` : "/");
     },
-    [router]
+    [router],
   );
 
-  // Debounced URL push for post search
   useEffect(() => {
     if (!mounted.current) { mounted.current = true; return; }
     const timer = setTimeout(() => push(value), 300);
     return () => clearTimeout(timer);
   }, [value, push]);
 
-  // Close dropdown on outside click
+  // ── Typeahead DB search (drives dropdown) ─────────────────────────────────
+  useEffect(() => {
+    const q = value.trim();
+    if (!q) { setUserResults([]); setPostResults([]); return; }
+    const timer = setTimeout(async () => {
+      const [users, posts] = await Promise.all([
+        searchProfiles(q, 5),
+        searchPostsQuick(q, 3),
+      ]);
+      setUserResults(users);
+      setPostResults(posts);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  // ── Close on outside click ────────────────────────────────────────────────
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
@@ -94,16 +153,21 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  function handleSelect() {
-    setFocused(false);
-  }
+  const hasResults   = userResults.length > 0 || postResults.length > 0;
+  const showDropdown = focused && hasResults;
+
+  function handleSelect() { setFocused(false); }
 
   return (
     <div ref={wrapperRef} className="relative w-full">
       {/* Input */}
       <div
         className="relative flex items-center w-full rounded-lg overflow-hidden"
-        style={{ background: "var(--bg-tertiary)", border: `1px solid ${focused ? "var(--accent-primary)" : "var(--border-subtle)"}`, transition: "border-color 0.15s" }}
+        style={{
+          background:    "var(--bg-tertiary)",
+          border:        `1px solid ${focused ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+          transition:    "border-color 0.15s",
+        }}
       >
         <Search
           className="absolute left-3 shrink-0"
@@ -116,7 +180,9 @@ export default function SearchBar() {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onFocus={() => setFocused(true)}
-          onKeyDown={(e) => { if (e.key === "Escape") { setFocused(false); (e.target as HTMLInputElement).blur(); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") { setFocused(false); (e.target as HTMLInputElement).blur(); }
+          }}
           placeholder={t("placeholder")}
           className="w-full bg-transparent py-2 pl-9 pr-4 text-sm outline-none"
           style={{ color: "var(--text-primary)" }}
@@ -125,23 +191,31 @@ export default function SearchBar() {
         />
       </div>
 
-      {/* Typeahead dropdown */}
+      {/* Dropdown */}
       {showDropdown && (
         <div
           className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden shadow-2xl z-[150]"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
-          {/* Section header */}
-          <div className="flex items-center gap-2 px-4 py-2" style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--bg-overlay)" }}>
-            <Users size={12} style={{ color: "var(--text-muted)" }} />
-            <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-              People
-            </span>
-          </div>
+          {/* People section */}
+          {userResults.length > 0 && (
+            <>
+              <SectionHeader icon={<User size={11} style={{ color: "var(--text-muted)" }} />} label="People" />
+              {userResults.map((u) => (
+                <UserItem key={u.id} user={u} onClick={handleSelect} />
+              ))}
+            </>
+          )}
 
-          {userResults.map((u) => (
-            <UserDropdownItem key={u.id} user={u} onClick={handleSelect} />
-          ))}
+          {/* Works section */}
+          {postResults.length > 0 && (
+            <>
+              <SectionHeader icon={<Layers size={11} style={{ color: "var(--text-muted)" }} />} label="Works" />
+              {postResults.map((p) => (
+                <PostItem key={p.id} post={p} onClick={handleSelect} />
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

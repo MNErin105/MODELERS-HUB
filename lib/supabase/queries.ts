@@ -204,6 +204,65 @@ export async function getFollowersCount(userId: string): Promise<number> {
   return count ?? 0;
 }
 
+// ── Quick-search types & queries ─────────────────────────────────────────────
+
+export type QuickUser = {
+  id: string;
+  username: string;
+  name: string;
+  avatarUrl: string;
+  country: string;
+};
+
+export type QuickPost = {
+  id: string;
+  title: string;
+  kit: string;
+  category: Category;
+  thumbnailUrl: string;
+};
+
+function escapeIlike(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export async function searchProfiles(query: string, limit = 5): Promise<QuickUser[]> {
+  const q = escapeIlike(query.trim());
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, avatar_url, country")
+    .or(`display_name.ilike.%${q}%,username.ilike.%${q}%`)
+    .limit(limit);
+  return (data ?? []).map((p) => ({
+    id:        p.id as string,
+    username:  p.username as string,
+    name:      (p.display_name as string | null) ?? (p.username as string),
+    avatarUrl: (p.avatar_url  as string | null) ?? "",
+    country:   (p.country     as string | null) ?? "",
+  }));
+}
+
+export async function searchPostsQuick(query: string, limit = 3): Promise<QuickPost[]> {
+  const q = escapeIlike(query.trim());
+  const { data } = await supabase
+    .from("posts")
+    .select("id, title, kit_name, category, post_images(image_url, sort_order)")
+    .or(`title.ilike.%${q}%,kit_name.ilike.%${q}%`)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  return (data ?? []).map((p) => {
+    const imgs = ((p.post_images as { image_url: string; sort_order: number }[]) ?? [])
+      .sort((a, b) => a.sort_order - b.sort_order);
+    return {
+      id:           p.id as string,
+      title:        p.title as string,
+      kit:          (p.kit_name as string | null) ?? "",
+      category:     DB_TO_CATEGORY[p.category as string] ?? "Other",
+      thumbnailUrl: imgs[0]?.image_url ?? "",
+    };
+  });
+}
+
 // ── Comment queries ───────────────────────────────────────────────────────────
 
 export async function fetchComments(postId: string): Promise<Comment[]> {
