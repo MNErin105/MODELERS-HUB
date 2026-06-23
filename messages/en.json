@@ -6,8 +6,8 @@
     "switchToJP": "Switch to Japanese"
   },
   "search": {
-    "placeholder": "Search works, tags, kits...",
-    "ariaLabel": "Search works, tags, kits"
+    "placeholder": "Search works, tags, kits, users...",
+    "ariaLabel": "Search works, tags, kits, users"
   },
   "footer": {
     "tagline": "A technical archive for scale modelers — Gunpla, dioramas & more."
