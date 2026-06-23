@@ -19,12 +19,15 @@ type AuthState = {
   user: AuthUser | null;
   loading: boolean;
   isLoginModalOpen: boolean;
-  openLoginModal: () => void;
-  closeLoginModal: () => void;
+  openLoginModal:   () => void;
+  closeLoginModal:  () => void;
   signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  updateAvatar: (file: File) => Promise<void>;
-  updateProfile: (data: { name: string; bio: string; username: string }) => Promise<void>;
+  signInWithEmail:  (email: string, password: string) => Promise<void>;
+  signUpWithEmail:  (email: string, password: string) => Promise<void>;
+  resetPassword:    (email: string) => Promise<void>;
+  signOut:          () => Promise<void>;
+  updateAvatar:     (file: File) => Promise<void>;
+  updateProfile:    (data: { name: string; bio: string; username: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState>({
@@ -34,6 +37,9 @@ const AuthContext = createContext<AuthState>({
   openLoginModal:   () => {},
   closeLoginModal:  () => {},
   signInWithGoogle: async () => {},
+  signInWithEmail:  async () => {},
+  signUpWithEmail:  async () => {},
+  resetPassword:    async () => {},
   signOut:          async () => {},
   updateAvatar:     async () => {},
   updateProfile:    async () => {},
@@ -140,6 +146,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) return;
+    const code = (error as { code?: string }).code;
+    if (code === "invalid_credentials" || error.message?.includes("Invalid login credentials")) {
+      throw new Error("メールアドレスまたはパスワードが正しくありません");
+    }
+    if (code === "email_not_confirmed") {
+      throw new Error("メールアドレスの確認が完了していません。確認メールをご確認ください。");
+    }
+    throw new Error(error.message ?? "ログインに失敗しました");
+  }, []);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (!error) return;
+    const msg = error.message ?? "";
+    if (msg.includes("User already registered") || (error as { code?: string }).code === "user_already_exists") {
+      throw new Error("このメールアドレスは既に登録されています");
+    }
+    throw new Error(msg || "登録に失敗しました");
+  }, []);
+
+  const resetPassword = useCallback(async (email: string) => {
+    const redirectTo = typeof window !== "undefined"
+      ? `${window.location.origin}/auth/reset`
+      : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw new Error(error.message ?? "パスワードリセットメールの送信に失敗しました");
+  }, []);
+
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -193,7 +230,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, loading, isLoginModalOpen,
-      openLoginModal, closeLoginModal, signInWithGoogle, signOut, updateAvatar, updateProfile,
+      openLoginModal, closeLoginModal,
+      signInWithGoogle, signInWithEmail, signUpWithEmail, resetPassword,
+      signOut, updateAvatar, updateProfile,
     }}>
       {children}
     </AuthContext.Provider>
