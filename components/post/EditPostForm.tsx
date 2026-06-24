@@ -243,6 +243,22 @@ export default function EditPostForm({ post }: { post: Post }) {
         );
       }
 
+      // 6. Replace post_tools
+      await supabase.from("post_tools").delete().eq("post_id", postId);
+      if (tools.length > 0) {
+        await supabase.from("post_tools").insert(
+          tools.map((name) => ({ post_id: postId, tool_name: name })),
+        );
+      }
+
+      // 7. Replace post_techniques
+      await supabase.from("post_techniques").delete().eq("post_id", postId);
+      if (techniques.length > 0) {
+        await supabase.from("post_techniques").insert(
+          techniques.map((name) => ({ post_id: postId, technique_name: name })),
+        );
+      }
+
       router.push(`/posts/${postId}`);
       router.refresh();
     } catch (err) {

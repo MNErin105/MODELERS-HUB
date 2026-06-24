@@ -265,7 +265,21 @@ export default function NewPostForm() {
         );
       }
 
-      // 6. WIP journal entries
+      // 6. Tools
+      if (tools.length > 0) {
+        await supabase.from("post_tools").insert(
+          tools.map((name) => ({ post_id: postId, tool_name: name }))
+        );
+      }
+
+      // 7. Techniques
+      if (techniques.length > 0) {
+        await supabase.from("post_techniques").insert(
+          techniques.map((name) => ({ post_id: postId, technique_name: name }))
+        );
+      }
+
+      // 8. WIP journal entries
       if (hasWIP) {
         const validSteps = wipSteps.filter((s) => s.title.trim());
         for (let i = 0; i < validSteps.length; i++) {

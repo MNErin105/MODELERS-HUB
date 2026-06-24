@@ -30,6 +30,8 @@ type RawBookmark  = { user_id: string };
 type RawImage     = { image_url: string; caption: string | null; author_comment: string | null; sort_order: number };
 type RawTag       = { tags: { name: string } | null };
 type RawPaint     = { paint_name: string };
+type RawTool      = { tool_name: string };
+type RawTechnique = { technique_name: string };
 type RawProfile   = { id: string; username: string; display_name: string; avatar_url: string | null; country: string | null; bio: string | null };
 
 type RawPost = {
@@ -43,6 +45,8 @@ type RawPost = {
   post_images: RawImage[];
   post_tags: RawTag[];
   post_paints: RawPaint[];
+  post_tools: RawTool[];
+  post_techniques: RawTechnique[];
   likes: RawLike[];
   bookmarks: RawBookmark[];
 };
@@ -87,8 +91,8 @@ function rawToPost(raw: RawPost): Post {
     category:        DB_TO_CATEGORY[raw.category] ?? "Other",
     kit:             raw.kit_name ?? "",
     paints:          raw.post_paints.map((p) => p.paint_name),
-    tools:           [],
-    techniques:      [],
+    tools:           raw.post_tools.map((t) => t.tool_name),
+    techniques:      raw.post_techniques.map((t) => t.technique_name),
     saveCount:       raw.bookmarks.length,
     likeCount:       raw.likes.length,
     weeklyLikeCount: raw.likes.filter((l) => l.created_at >= weekAgo).length,
@@ -104,6 +108,8 @@ const POST_SELECT = [
   "post_images (image_url, caption, author_comment, sort_order)",
   "post_tags (tags (name))",
   "post_paints (paint_name)",
+  "post_tools (tool_name)",
+  "post_techniques (technique_name)",
   "likes (user_id, created_at)",
   "bookmarks (user_id)",
 ].join(", ");
