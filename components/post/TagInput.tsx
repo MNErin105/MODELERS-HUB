@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useMemo, useState, useRef, KeyboardEvent } from "react";
 import { X } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+export type TagSuggestion = { value: string; label: string };
 
 type Props = {
   label: string;
   value: string[];
   onChange: (tags: string[]) => void;
   placeholder?: string;
-  suggestions?: string[];
+  suggestions?: TagSuggestion[];
   max?: number;
 };
 
@@ -22,12 +24,18 @@ export default function TagInput({ label, value, onChange, placeholder, suggesti
   const defaultPlaceholder = t("placeholders.addTag");
   const ph = placeholder ?? defaultPlaceholder;
 
-  const filtered = suggestions.filter(
-    (s) => s.toLowerCase().includes(input.toLowerCase()) && !value.includes(s)
+  // Map stored values → display labels for chips
+  const labelMap = useMemo(
+    () => Object.fromEntries(suggestions.map((s) => [s.value, s.label])),
+    [suggestions],
   );
 
-  function add(tag: string) {
-    const cleaned = tag.trim().replace(/^#+/, "");
+  const filtered = suggestions.filter(
+    (s) => s.label.toLowerCase().includes(input.toLowerCase()) && !value.includes(s.value),
+  );
+
+  function add(val: string) {
+    const cleaned = val.trim().replace(/^#+/, "");
     if (!cleaned || value.includes(cleaned) || value.length >= max) return;
     onChange([...value, cleaned]);
     setInput("");
@@ -69,7 +77,7 @@ export default function TagInput({ label, value, onChange, placeholder, suggesti
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
             style={{ background: "var(--accent-muted)", color: "var(--accent-primary)" }}
           >
-            {tag}
+            {labelMap[tag] ?? tag}
             <button
               type="button"
               onClick={() => remove(tag)}
@@ -108,13 +116,13 @@ export default function TagInput({ label, value, onChange, placeholder, suggesti
             >
               {filtered.slice(0, 8).map((s) => (
                 <button
-                  key={s}
+                  key={s.value}
                   type="button"
-                  onMouseDown={() => add(s)}
+                  onMouseDown={() => add(s.value)}
                   className="w-full text-left px-3 py-2 text-sm hover:opacity-80 transition-opacity"
                   style={{ color: "var(--text-secondary)", fontFamily: "var(--font-mono)" }}
                 >
-                  {s}
+                  {s.label}
                 </button>
               ))}
             </div>

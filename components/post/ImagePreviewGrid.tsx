@@ -9,7 +9,6 @@ export type UploadedImage = {
   id: string;
   url: string;
   caption: string;
-  authorComment: string;
 };
 
 type Props = {
@@ -17,10 +16,9 @@ type Props = {
   onReorder: (images: UploadedImage[]) => void;
   onDelete: (id: string) => void;
   onCaptionChange: (id: string, caption: string) => void;
-  onAuthorCommentChange: (id: string, comment: string) => void;
 };
 
-export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptionChange, onAuthorCommentChange }: Props) {
+export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptionChange }: Props) {
   const t = useTranslations("newPost");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
@@ -141,19 +139,6 @@ export default function ImagePreviewGrid({ images, onReorder, onDelete, onCaptio
               }}
             />
 
-            {/* Author comment — fullscreen only */}
-            <textarea
-              value={img.authorComment}
-              onChange={(e) => onAuthorCommentChange(img.id, e.target.value)}
-              placeholder="Fullscreen comment (optional)"
-              rows={2}
-              className="w-full text-xs px-1.5 py-1 rounded bg-transparent outline-none resize-none"
-              style={{
-                color:  "var(--text-secondary)",
-                border: "1px solid var(--border-subtle)",
-                lineHeight: 1.5,
-              }}
-            />
           </div>
         );
       })}

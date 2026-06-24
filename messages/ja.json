@@ -67,6 +67,7 @@
   },
   "post": {
     "backToArchive": "一覧に戻る",
+    "edit": "編集",
     "tabs": {
       "works": "作品",
       "journal": "制作記録",
@@ -177,6 +178,10 @@
     "cancel": "キャンセル",
     "submit": "Modelers Hub に投稿",
     "submitting": "投稿中…",
+    "deletePost": "削除",
+    "deleteConfirmBody": "本当に削除しますか？この操作は取り消せません。",
+    "deleteConfirm": "削除する",
+    "deleting": "削除中…",
     "imageOrderHint": "ドラッグで並び替え · 先頭がカバー画像 · ×で削除",
     "tagHint": "Enter またはカンマで追加",
     "tagHintMax": "— 最大{max}個",

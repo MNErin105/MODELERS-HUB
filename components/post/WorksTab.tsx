@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Pencil } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { Post } from "@/lib/types";
 import TagBadge from "@/components/ui/TagBadge";
 import SaveButton from "@/components/ui/SaveButton";
@@ -11,11 +13,18 @@ import FollowButton from "@/components/ui/FollowButton";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { categorySlug } from "@/lib/types";
+import { useAuth } from "@/lib/context/AuthContext";
+import { translateTag } from "@/lib/tagTranslations";
 
 type Props = { post: Post };
 
 export default function WorksTab({ post }: Props) {
-  const [activeIdx, setActiveIdx]     = useState(0);
+  const t = useTranslations("post");
+  const locale = useLocale();
+  const { user } = useAuth();
+  const isAuthor = !!user && user.id === post.author.id;
+
+  const [activeIdx, setActiveIdx]       = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = post.images[activeIdx];
 
@@ -128,9 +137,13 @@ export default function WorksTab({ post }: Props) {
         </div>
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-2">
-          {post.tags.map((tag) => <TagBadge key={tag} label={tag} size="md" />)}
-        </div>
+        {post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {post.tags.map((tag) => (
+              <TagBadge key={tag} label={translateTag(tag, locale)} size="md" />
+            ))}
+          </div>
+        )}
 
         {/* Stats bar */}
         <div
@@ -139,8 +152,24 @@ export default function WorksTab({ post }: Props) {
         >
           <SaveButton postId={post.id} count={post.saveCount} />
           <LikeButton postId={post.id} count={post.likeCount} />
-          <div className="ml-auto text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-            {new Date(post.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+          <div className="ml-auto flex items-center gap-3">
+            {isAuthor && (
+              <Link
+                href={`/posts/${post.id}/edit`}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
+                style={{
+                  background: "var(--bg-tertiary)",
+                  border:     "1px solid var(--border-subtle)",
+                  color:      "var(--text-secondary)",
+                }}
+              >
+                <Pencil size={12} />
+                {t("edit")}
+              </Link>
+            )}
+            <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+              {new Date(post.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+            </span>
           </div>
         </div>
 
@@ -180,7 +209,7 @@ function BuildMetaCard({
           {value}
         </p>
       )}
-      {chips && (
+      {chips && chips.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {chips.map((c) => (
             <span key={c} className="inline-block px-2.5 py-1 rounded text-xs font-medium"

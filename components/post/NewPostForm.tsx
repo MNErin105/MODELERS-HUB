@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Send, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { CATEGORIES, Category } from "@/lib/types";
+import { buildSuggestions } from "@/lib/tagTranslations";
 import { CATEGORY_META } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { supabase } from "@/lib/supabase";
@@ -15,16 +16,17 @@ import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
 import WIPStepEditor, { WIPStep } from "./WIPStepEditor";
 import TagInput from "./TagInput";
 
-// ── Suggested tags ────────────────────────────────────────────────────────────
-const PAINT_SUGGESTIONS = [
+// ── Suggested tag values (stored in DB as English) ───────────────────────────
+const PAINT_VALUES = [
   "Mr. Color", "Gaia Notes", "Tamiya Acrylic", "Vallejo", "Finisher's",
   "Mr. Surfacer", "AK Interactive", "Ammo by Mig", "Citadel", "Oil Paint",
+  "Army Painter", "Scale75", "Pro Acryl",
 ];
-const TOOL_SUGGESTIONS = [
+const TOOL_VALUES = [
   "Airbrush", "Hand-brushed", "Decals", "Pla-plate", "Photo-etch",
   "LED integration", "Soldering",
 ];
-const TECHNIQUE_SUGGESTIONS = [
+const TECHNIQUE_VALUES = [
   "Weathering", "Chipping", "Drybrushing", "Panel Lining", "Salt weathering",
   "Hair spray technique", "Oil dot filtering", "Pin wash", "NMM", "OSL",
   "Zenithal priming", "Pre-shading", "Post-shading", "Scribing", "Masking",
@@ -33,7 +35,7 @@ const TECHNIQUE_SUGGESTIONS = [
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 function createPreview(file: File): UploadedImage {
-  return { id: uid(), url: URL.createObjectURL(file), caption: "", authorComment: "" };
+  return { id: uid(), url: URL.createObjectURL(file), caption: "" };
 }
 
 function fileExt(file: File): string {
@@ -90,7 +92,12 @@ export default function NewPostForm() {
   const tc     = useTranslations("category");
   const ta     = useTranslations("auth");
   const router = useRouter();
+  const locale = useLocale();
   const { user, openLoginModal } = useAuth();
+
+  const paintSuggestions     = useMemo(() => buildSuggestions(PAINT_VALUES,     locale), [locale]);
+  const toolSuggestions      = useMemo(() => buildSuggestions(TOOL_VALUES,      locale), [locale]);
+  const techniqueSuggestions = useMemo(() => buildSuggestions(TECHNIQUE_VALUES, locale), [locale]);
 
   // Core fields
   const [title,       setTitle]       = useState("");
@@ -137,8 +144,6 @@ export default function NewPostForm() {
   }, []);
   const updateCaption  = useCallback((id: string, cap: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
-  const updateAuthorComment = useCallback((id: string, comment: string) =>
-    setCoverImages((p) => p.map((i) => i.id === id ? { ...i, authorComment: comment } : i)), []);
 
   // ── WIP handlers ────────────────────────────────────────────────────────────
   function addStep() { setWipSteps((p) => [...p, { id: uid(), title: "", description: "", images: [] }]); }
@@ -230,22 +235,27 @@ export default function NewPostForm() {
       // 3. INSERT post_images
       if (imageUrls.length > 0) {
         const imageRows = coverImages.map((img, i) => ({
-          post_id:        postId,
-          image_url:      imageUrls[i] ?? "",
-          caption:        img.caption.trim() || null,
-          author_comment: img.authorComment.trim() || null,
-          sort_order:     i,
+          post_id:    postId,
+          image_url:  imageUrls[i] ?? "",
+          caption:    img.caption.trim() || null,
+          sort_order: i,
         })).filter((r) => r.image_url);
         await supabase.from("post_images").insert(imageRows);
       }
 
-      // 4. Tags — upsert then link
+      // 4. Tags — insert-or-ignore, then SELECT to get id
+      // ignoreDuplicates:true generates DO NOTHING (no UPDATE policy needed on tags table)
       if (tags.length > 0) {
         for (const tagName of tags) {
+          const normalized = tagName.trim();
+          if (!normalized) continue;
+          await supabase
+            .from("tags")
+            .upsert({ name: normalized }, { onConflict: "name", ignoreDuplicates: true });
           const { data: tagRow } = await supabase
             .from("tags")
-            .upsert({ name: tagName.trim() }, { onConflict: "name" })
             .select("id")
+            .eq("name", normalized)
             .single();
           if (tagRow?.id) {
             await supabase.from("post_tags").insert({ post_id: postId, tag_id: tagRow.id });
@@ -351,7 +361,6 @@ export default function NewPostForm() {
               onReorder={reorderImages}
               onDelete={deleteImage}
               onCaptionChange={updateCaption}
-              onAuthorCommentChange={updateAuthorComment}
             />
             {errors.images && <FieldError msg={errors.images} />}
             {coverImages.length > 0 && (
@@ -423,9 +432,9 @@ export default function NewPostForm() {
 
           {/* ── Materials ────────────────────────────────────────────────── */}
           <Section title={t("sections.materials")}>
-            <TagInput label={t("fields.paints")}     value={paints}     onChange={setPaints}     placeholder={t("placeholders.paints")}     suggestions={PAINT_SUGGESTIONS} />
-            <TagInput label={t("fields.tools")}      value={tools}      onChange={setTools}      placeholder={t("placeholders.tools")}      suggestions={TOOL_SUGGESTIONS} />
-            <TagInput label={t("fields.techniques")} value={techniques} onChange={setTechniques} placeholder={t("placeholders.techniques")} suggestions={TECHNIQUE_SUGGESTIONS} />
+            <TagInput label={t("fields.paints")}     value={paints}     onChange={setPaints}     placeholder={t("placeholders.paints")}     suggestions={paintSuggestions} />
+            <TagInput label={t("fields.tools")}      value={tools}      onChange={setTools}      placeholder={t("placeholders.tools")}      suggestions={toolSuggestions} />
+            <TagInput label={t("fields.techniques")} value={techniques} onChange={setTechniques} placeholder={t("placeholders.techniques")} suggestions={techniqueSuggestions} />
           </Section>
 
           {/* ── Tags ─────────────────────────────────────────────────────── */}
