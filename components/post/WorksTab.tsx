@@ -28,6 +28,16 @@ export default function WorksTab({ post }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const active = post.images[activeIdx];
 
+  if (post.images.length === 0) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="lg:col-span-3 flex items-center justify-center rounded-xl" style={{ aspectRatio: "4/3", background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>No images</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">

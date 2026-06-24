@@ -54,7 +54,7 @@ type RawPost = {
 // ── Transformation ────────────────────────────────────────────────────────────
 
 function rawToPost(raw: RawPost): Post {
-  const sortedImages = [...raw.post_images].sort((a, b) => a.sort_order - b.sort_order);
+  const sortedImages = [...(raw.post_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
 
   const author: Author = raw.profiles
     ? {
@@ -90,9 +90,9 @@ function rawToPost(raw: RawPost): Post {
     tags,
     category:        DB_TO_CATEGORY[raw.category] ?? "Other",
     kit:             raw.kit_name ?? "",
-    paints:          raw.post_paints.map((p) => p.paint_name),
-    tools:           raw.post_tools.map((t) => t.tool_name),
-    techniques:      raw.post_techniques.map((t) => t.technique_name),
+    paints:          (raw.post_paints     ?? []).map((p) => p.paint_name),
+    tools:           (raw.post_tools      ?? []).map((t) => t.tool_name),
+    techniques:      (raw.post_techniques ?? []).map((t) => t.technique_name),
     saveCount:       raw.bookmarks.length,
     likeCount:       raw.likes.length,
     weeklyLikeCount: raw.likes.filter((l) => l.created_at >= weekAgo).length,
