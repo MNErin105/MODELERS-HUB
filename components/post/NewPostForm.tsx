@@ -15,13 +15,9 @@ import ImageUploadZone from "./ImageUploadZone";
 import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
 import WIPStepEditor, { WIPStep } from "./WIPStepEditor";
 import TagInput from "./TagInput";
+import PaintTagInput from "./PaintTagInput";
 
 // ── Suggested tag values (stored in DB as English) ───────────────────────────
-const PAINT_VALUES = [
-  "Mr. Color", "Gaia Notes", "Tamiya Acrylic", "Vallejo", "Finisher's",
-  "Mr. Surfacer", "AK Interactive", "Ammo by Mig", "Citadel", "Oil Paint",
-  "Army Painter", "Scale75", "Pro Acryl",
-];
 const TOOL_VALUES = [
   "Airbrush", "Hand-brushed", "Decals", "Pla-plate", "Photo-etch",
   "LED integration", "Soldering",
@@ -95,7 +91,6 @@ export default function NewPostForm() {
   const locale = useLocale();
   const { user, openLoginModal } = useAuth();
 
-  const paintSuggestions     = useMemo(() => buildSuggestions(PAINT_VALUES,     locale), [locale]);
   const toolSuggestions      = useMemo(() => buildSuggestions(TOOL_VALUES,      locale), [locale]);
   const techniqueSuggestions = useMemo(() => buildSuggestions(TECHNIQUE_VALUES, locale), [locale]);
 
@@ -432,7 +427,7 @@ export default function NewPostForm() {
 
           {/* ── Materials ────────────────────────────────────────────────── */}
           <Section title={t("sections.materials")}>
-            <TagInput label={t("fields.paints")}     value={paints}     onChange={setPaints}     placeholder={t("placeholders.paints")}     suggestions={paintSuggestions} />
+            <PaintTagInput label={t("fields.paints")} value={paints} onChange={setPaints} placeholder={t("placeholders.paints")} />
             <TagInput label={t("fields.tools")}      value={tools}      onChange={setTools}      placeholder={t("placeholders.tools")}      suggestions={toolSuggestions} />
             <TagInput label={t("fields.techniques")} value={techniques} onChange={setTechniques} placeholder={t("placeholders.techniques")} suggestions={techniqueSuggestions} />
           </Section>
