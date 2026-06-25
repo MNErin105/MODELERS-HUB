@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { CATEGORIES, Category } from "@/lib/types";
 import { buildSuggestions } from "@/lib/tagTranslations";
 import { CATEGORY_META } from "@/lib/types";
+import { prepareFile, StoredFile } from "@/lib/imageUtils";
 import { useAuth } from "@/lib/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { CATEGORY_TO_DB } from "@/lib/supabase/queries";
@@ -34,9 +35,6 @@ function createPreview(file: File): UploadedImage {
   return { id: uid(), url: URL.createObjectURL(file), caption: "" };
 }
 
-function fileExt(file: File): string {
-  return file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-}
 
 // ── Layout helpers ────────────────────────────────────────────────────────────
 function Section({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) {
@@ -106,16 +104,16 @@ export default function NewPostForm() {
   const [techniques, setTechniques] = useState<string[]>([]);
   const [tags,       setTags]       = useState<string[]>([]);
 
-  // Images — preview objects in state, original Files in a ref map
+  // Images — preview objects in state, StoredFile (ArrayBuffer) in ref map
   const [coverImages, setCoverImages] = useState<UploadedImage[]>([]);
-  const coverFileMap = useRef(new Map<string, File>());
+  const coverFileMap = useRef(new Map<string, StoredFile>());
 
   // WIP
   const [hasWIP,   setHasWIP]   = useState(false);
   const [wipSteps, setWipSteps] = useState<WIPStep[]>([
     { id: uid(), title: "", description: "", images: [] },
   ]);
-  const wipFileMap = useRef(new Map<string, File>()); // id -> File for WIP images
+  const wipFileMap = useRef(new Map<string, StoredFile>());
 
   // Form state
   const [submitting, setSubmitting] = useState(false);
@@ -123,13 +121,16 @@ export default function NewPostForm() {
   const [errors,      setErrors]     = useState<Record<string, string>>({});
 
   // ── Image handlers ──────────────────────────────────────────────────────────
-  const addCoverImages = useCallback((files: File[]) => {
-    const newPreviews = files.map((file) => {
-      const preview = createPreview(file);
-      coverFileMap.current.set(preview.id, file);
-      return preview;
-    });
-    setCoverImages((prev) => [...prev, ...newPreviews].slice(0, 20));
+  const addCoverImages = useCallback(async (files: File[]) => {
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const { previewUrl, stored } = await prepareFile(file);
+        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
+        coverFileMap.current.set(preview.id, stored);
+        return preview;
+      }),
+    );
+    setCoverImages((prev) => [...prev, ...entries].slice(0, 20));
   }, []);
 
   const reorderImages  = useCallback((imgs: UploadedImage[]) => setCoverImages(imgs), []);
@@ -148,15 +149,18 @@ export default function NewPostForm() {
     setWipSteps((p) => p.map((s) => s.id === id ? { ...s, [field]: value } : s));
   }
 
-  function addStepImages(stepId: string, files: File[]) {
+  async function addStepImages(stepId: string, files: File[]) {
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const { previewUrl, stored } = await prepareFile(file);
+        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
+        wipFileMap.current.set(preview.id, stored);
+        return preview;
+      }),
+    );
     setWipSteps((p) => p.map((s) => {
       if (s.id !== stepId) return s;
-      const added = files.map((file) => {
-        const preview = createPreview(file);
-        wipFileMap.current.set(preview.id, file);
-        return preview;
-      }).slice(0, 5 - s.images.length);
-      return { ...s, images: [...s.images, ...added] };
+      return { ...s, images: [...s.images, ...entries].slice(0, 5) };
     }));
   }
 
@@ -215,13 +219,13 @@ export default function NewPostForm() {
       // 2. Upload cover images
       const imageUrls: string[] = [];
       for (let i = 0; i < coverImages.length; i++) {
-        const img  = coverImages[i];
-        const file = coverFileMap.current.get(img.id);
-        if (!file) continue;
-        const path = `${user.id}/${postId}-${i}.${fileExt(file)}`;
+        const img    = coverImages[i];
+        const stored = coverFileMap.current.get(img.id);
+        if (!stored) throw new Error("画像の参照が失われました。もう一度画像を選択してください。");
+        const path = `${user.id}/${postId}-${i}.${stored.ext}`;
         const { error: upErr } = await supabase.storage
           .from("post-images")
-          .upload(path, file, { contentType: file.type, upsert: false });
+          .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
         if (upErr) throw new Error((upErr as { message?: string })?.message ?? "Image upload failed.");
         const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
         imageUrls.push(urlData.publicUrl);
@@ -289,12 +293,12 @@ export default function NewPostForm() {
           // Upload the first WIP image for this step
           const firstImg = step.images[0];
           if (firstImg) {
-            const wipFile = wipFileMap.current.get(firstImg.id);
-            if (wipFile) {
-              const wipPath = `${user.id}/${postId}-wip-${i}.${fileExt(wipFile)}`;
+            const wipStored = wipFileMap.current.get(firstImg.id);
+            if (wipStored) {
+              const wipPath = `${user.id}/${postId}-wip-${i}.${wipStored.ext}`;
               const { error: wipErr } = await supabase.storage
                 .from("post-images")
-                .upload(wipPath, wipFile, { contentType: wipFile.type, upsert: false });
+                .upload(wipPath, wipStored.buffer, { contentType: wipStored.contentType, upsert: false });
               if (!wipErr) {
                 const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
                 stepImageUrl = wipUrlData.publicUrl;

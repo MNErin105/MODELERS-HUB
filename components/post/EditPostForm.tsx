@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { CATEGORY_TO_DB } from "@/lib/supabase/queries";
 import { buildSuggestions } from "@/lib/tagTranslations";
+import { prepareFile, StoredFile } from "@/lib/imageUtils";
 import ImageUploadZone from "./ImageUploadZone";
 import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
 import TagInput from "./TagInput";
@@ -30,9 +31,6 @@ const TECHNIQUE_VALUES = [
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-function fileExt(file: File): string {
-  return file.name.split(".").pop()?.toLowerCase() ?? "jpg";
-}
 
 // Extract the storage path segment from a Supabase public URL.
 // URL shape: .../storage/v1/object/public/post-images/{path}
@@ -119,8 +117,8 @@ export default function EditPostForm({ post }: { post: Post }) {
 
   // Track which image ids are pre-existing (already in storage)
   const existingImageIds = useRef(new Set(post.images.map((img) => img.url)));
-  // New files added during this edit session
-  const coverFileMap = useRef(new Map<string, File>());
+  // New files added during this edit session (ArrayBuffer avoids iOS File-ref expiry)
+  const coverFileMap = useRef(new Map<string, StoredFile>());
 
   // Form state
   const [submitting,         setSubmitting]         = useState(false);
@@ -131,14 +129,16 @@ export default function EditPostForm({ post }: { post: Post }) {
   const [deleteError,        setDeleteError]        = useState<string | null>(null);
 
   // ── Image handlers ──────────────────────────────────────────────────────────
-  const addCoverImages = useCallback((files: File[]) => {
-    const newPreviews = files.map((file) => {
-      const id      = uid();
-      const preview: UploadedImage = { id, url: URL.createObjectURL(file), caption: "" };
-      coverFileMap.current.set(id, file);
-      return preview;
-    });
-    setCoverImages((prev) => [...prev, ...newPreviews].slice(0, 20));
+  const addCoverImages = useCallback(async (files: File[]) => {
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const { previewUrl, stored } = await prepareFile(file);
+        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
+        coverFileMap.current.set(preview.id, stored);
+        return preview;
+      }),
+    );
+    setCoverImages((prev) => [...prev, ...entries].slice(0, 20));
   }, []);
 
   const reorderImages = useCallback((imgs: UploadedImage[]) => setCoverImages(imgs), []);
@@ -192,12 +192,12 @@ export default function EditPostForm({ post }: { post: Post }) {
         if (existingImageIds.current.has(img.id)) {
           finalImages.push({ url: img.url, caption: img.caption });
         } else {
-          const file = coverFileMap.current.get(img.id);
-          if (!file) continue;
-          const path = `${user.id}/${postId}-edit-${uid()}.${fileExt(file)}`;
+          const stored = coverFileMap.current.get(img.id);
+          if (!stored) throw new Error("画像の参照が失われました。もう一度画像を選択してください。");
+          const path = `${user.id}/${postId}-edit-${uid()}.${stored.ext}`;
           const { error: upErr } = await supabase.storage
             .from("post-images")
-            .upload(path, file, { contentType: file.type, upsert: false });
+            .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
           if (upErr) throw new Error(upErr.message ?? "Image upload failed.");
           const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
           finalImages.push({ url: urlData.publicUrl, caption: img.caption });

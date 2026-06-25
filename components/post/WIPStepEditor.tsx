@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Plus, Trash2, ImagePlus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { UploadedImage } from "./ImagePreviewGrid";
+import { isImageFile } from "@/lib/imageUtils";
 
 export type WIPStep = {
   id: string;
@@ -72,7 +73,7 @@ function StepCard({ step, index, onRemove, onUpdateField, onAddImages, onRemoveI
   function handleFiles(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
     const files = Array.from(e.target.files)
-      .filter((f) => f.type.startsWith("image/"))
+      .filter(isImageFile)
       .slice(0, remaining);
     if (files.length > 0) onAddImages(files);
     e.target.value = "";
@@ -151,7 +152,7 @@ function StepCard({ step, index, onRemove, onUpdateField, onAddImages, onRemoveI
       {/* Add step images */}
       {remaining > 0 && (
         <>
-          <input ref={inputRef} type="file" accept="image/*" multiple className="sr-only" onChange={handleFiles} />
+          <input ref={inputRef} type="file" accept="image/*,image/heic,image/heif" multiple className="sr-only" onChange={handleFiles} />
           <button
             type="button"
             onClick={() => inputRef.current?.click()}

@@ -3,6 +3,7 @@
 import { useRef, useState, DragEvent, ChangeEvent } from "react";
 import { Upload, ImagePlus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { isImageFile } from "@/lib/imageUtils";
 
 type Props = {
   onFilesAdded: (files: File[]) => void;
@@ -20,7 +21,7 @@ export default function ImageUploadZone({ onFilesAdded, currentCount, max = 20 }
   function handleFiles(files: FileList | null) {
     if (!files) return;
     const valid = Array.from(files)
-      .filter((f) => f.type.startsWith("image/"))
+      .filter(isImageFile)
       .slice(0, remaining);
     if (valid.length > 0) onFilesAdded(valid);
   }
@@ -64,7 +65,7 @@ export default function ImageUploadZone({ onFilesAdded, currentCount, max = 20 }
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,image/heic,image/heif"
         multiple
         className="sr-only"
         onChange={onChange}
