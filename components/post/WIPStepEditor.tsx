@@ -19,7 +19,7 @@ type Props = {
   onAdd: () => void;
   onRemove: (id: string) => void;
   onUpdateField: (id: string, field: "title" | "description", value: string) => void;
-  onAddImages: (stepId: string, files: File[]) => void;
+  onAddImages: (stepId: string, files: File[]) => Promise<void> | void;
   onRemoveImage: (stepId: string, imgId: string) => void;
 };
 
@@ -61,7 +61,7 @@ type CardProps = {
   index: number;
   onRemove: () => void;
   onUpdateField: (field: "title" | "description", value: string) => void;
-  onAddImages: (files: File[]) => void;
+  onAddImages: (files: File[]) => Promise<void> | void;
   onRemoveImage: (imgId: string) => void;
 };
 
@@ -70,12 +70,12 @@ function StepCard({ step, index, onRemove, onUpdateField, onAddImages, onRemoveI
   const inputRef = useRef<HTMLInputElement>(null);
   const remaining = 5 - step.images.length;
 
-  function handleFiles(e: ChangeEvent<HTMLInputElement>) {
+  async function handleFiles(e: ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
     const files = Array.from(e.target.files)
       .filter(isImageFile)
       .slice(0, remaining);
-    if (files.length > 0) onAddImages(files);
+    if (files.length > 0) await onAddImages(files);
     e.target.value = "";
   }
 

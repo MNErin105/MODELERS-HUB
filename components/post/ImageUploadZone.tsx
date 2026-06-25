@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { isImageFile } from "@/lib/imageUtils";
 
 type Props = {
-  onFilesAdded: (files: File[]) => void;
+  onFilesAdded: (files: File[]) => Promise<void> | void;
   currentCount: number;
   max?: number;
 };
@@ -18,12 +18,9 @@ export default function ImageUploadZone({ onFilesAdded, currentCount, max = 20 }
 
   const remaining = max - currentCount;
 
-  function handleFiles(files: FileList | null) {
-    if (!files) return;
-    const valid = Array.from(files)
-      .filter(isImageFile)
-      .slice(0, remaining);
-    if (valid.length > 0) onFilesAdded(valid);
+  function filterFiles(files: FileList | null): File[] {
+    if (!files) return [];
+    return Array.from(files).filter(isImageFile).slice(0, remaining);
   }
 
   function onDragOver(e: DragEvent) {
@@ -38,11 +35,16 @@ export default function ImageUploadZone({ onFilesAdded, currentCount, max = 20 }
   function onDrop(e: DragEvent) {
     e.preventDefault();
     setDragging(false);
-    handleFiles(e.dataTransfer.files);
+    const valid = filterFiles(e.dataTransfer.files);
+    if (valid.length > 0) onFilesAdded(valid);
   }
 
-  function onChange(e: ChangeEvent<HTMLInputElement>) {
-    handleFiles(e.target.files);
+  // Must be async so we await onFilesAdded (which may be async) before resetting
+  // the input. On iOS Safari, resetting the input before the File's arrayBuffer()
+  // is read can cause the File object to be garbage-collected, silently dropping images.
+  async function onChange(e: ChangeEvent<HTMLInputElement>) {
+    const valid = filterFiles(e.target.files);
+    if (valid.length > 0) await onFilesAdded(valid);
     e.target.value = "";
   }
 
