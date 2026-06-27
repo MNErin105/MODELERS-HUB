@@ -133,7 +133,10 @@
     "close": "Close",
     "noImage": "Please select an image.",
     "tapToSelect": "Tap to select an image",
-    "noStories": "No stories yet"
+    "noStories": "No stories yet",
+    "deleteConfirmTitle": "Delete this story?",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel"
   },
   "home": {
     "filters": {

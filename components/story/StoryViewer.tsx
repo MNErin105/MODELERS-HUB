@@ -30,6 +30,7 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
 
   const [index, setIndex] = useState(startIndex);
   const [progress, setProgress] = useState(0);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAt   = useRef(Date.now());
@@ -40,6 +41,12 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
   const isOwner = user?.id === story?.userId;
 
   // ── Zoom / pan — driven via refs directly into the DOM ───────────────────
+  // storyCardRef  → touch listener target (parent of buttons; lets isGestureActive
+  //                 guard skip button touches before any preventDefault is called)
+  // containerRef  → image container; used only for clampPan dimension lookup
+  // imgWrapRef    → receives CSS transform; has touch-action:none so iOS Safari
+  //                 correctly generates click events for sibling buttons
+  const storyCardRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgWrapRef   = useRef<HTMLDivElement>(null);
   const scaleRef     = useRef(1);
@@ -157,7 +164,10 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
   const isGestureActive = useRef(false);
 
   useEffect(() => {
-    const el = containerRef.current;
+    // Register on the story-card div (ancestor of ALL elements including buttons).
+    // The isGestureActive guard bails out before any preventDefault() when the
+    // touch target is a button, so button clicks always reach their onClick handlers.
+    const el = storyCardRef.current;
     if (!el) return;
 
     function onTouchStart(e: TouchEvent) {
@@ -283,7 +293,13 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
   useEffect(() => { resetZoom(); }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Delete ────────────────────────────────────────────────────────────────
-  async function handleDelete() {
+  function requestDelete() {
+    pauseTimer();
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete() {
+    setShowDeleteConfirm(false);
     try {
       await deleteStory(story);
       onDeleted?.(story.id);
@@ -293,6 +309,11 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
         setIndex((i) => i - 1);
       }
     } catch { /* best effort */ }
+  }
+
+  function cancelDelete() {
+    setShowDeleteConfirm(false);
+    resumeTimer();
   }
 
   function expiresLabel(): string {
@@ -312,18 +333,21 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
     >
       {/* ── Story card ─────────────────────────────────────────────────── */}
       <div
+        ref={storyCardRef}
         className="relative"
         style={{ width: "min(100vw, 400px)", height: "min(100vh, 710px)", maxHeight: "100dvh" }}
       >
-        {/* Image container — touch + mouse target */}
+        {/* Image container — dimension reference for clampPan, mouse pause/resume */}
         <div
           ref={containerRef}
           className="absolute inset-0 rounded-xl overflow-hidden"
-          style={{ touchAction: "none", background: "#000" }}
+          style={{ background: "#000" }}
           onMouseDown={() => pauseTimer()}
           onMouseUp={() => resumeTimer()}
         >
-          {/* Zoom / pan wrapper — transform applied here */}
+          {/* Zoom / pan wrapper — transform applied here.
+              touch-action:none is scoped to the image area only, so iOS Safari
+              still generates click events for the sibling header buttons. */}
           <div
             ref={imgWrapRef}
             style={{
@@ -331,6 +355,7 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
               inset: 0,
               transformOrigin: "center",
               willChange: "transform",
+              touchAction: "none",
             }}
           >
             <Image
@@ -393,7 +418,7 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
           {isOwner && (
             <button
               type="button"
-              onClick={handleDelete}
+              onClick={requestDelete}
               className="p-1.5 rounded-full transition-opacity hover:opacity-80"
               style={{ background: "rgba(0,0,0,0.5)" }}
               aria-label="Delete story"
@@ -412,16 +437,53 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
           </button>
         </div>
 
-        {/* Desktop tap zones (hidden on mobile — touch handles it) */}
+        {/* Delete confirmation modal */}
+        {showDeleteConfirm && (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center p-6"
+            style={{ background: "rgba(0,0,0,0.75)" }}
+          >
+            <div
+              className="w-full max-w-xs rounded-2xl p-5 flex flex-col gap-4"
+              style={{ background: "var(--bg-primary)", border: "1px solid var(--border-subtle)" }}
+            >
+              <p className="text-sm font-semibold text-center" style={{ color: "var(--text-primary)" }}>
+                {t("deleteConfirmTitle")}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={cancelDelete}
+                  className="flex-1 py-2 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
+                  style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+                >
+                  {t("deleteCancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 rounded-xl text-sm font-bold transition-opacity hover:opacity-80"
+                  style={{ background: "#ef4444", color: "#fff" }}
+                >
+                  {t("deleteConfirm")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Desktop tap zones (hidden on mobile — touch handles it).
+            z-[5] keeps these below the header (z-10) so the delete / close
+            buttons are never occluded by the invisible tap zone overlay. */}
         <button
           type="button"
-          className="absolute left-0 top-0 bottom-0 w-1/3 z-10 opacity-0 hidden md:block"
+          className="absolute left-0 top-0 bottom-0 w-1/3 z-[5] opacity-0 hidden md:block"
           onClick={() => goPrevCb.current()}
           aria-label="Previous"
         />
         <button
           type="button"
-          className="absolute right-0 top-0 bottom-0 w-1/3 z-10 opacity-0 hidden md:block"
+          className="absolute right-0 top-0 bottom-0 w-1/3 z-[5] opacity-0 hidden md:block"
           onClick={() => goNextCb.current()}
           aria-label="Next"
         />
