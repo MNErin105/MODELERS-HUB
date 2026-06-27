@@ -17,6 +17,12 @@ type Props = {
 };
 
 const DURATION_MS = 5000;
+const MIN_SCALE = 1;
+const MAX_SCALE = 3;
+
+function touchDist(t0: Touch, t1: Touch): number {
+  return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+}
 
 export default function StoryViewer({ stories, startIndex = 0, onClose, onDeleted }: Props) {
   const t = useTranslations("story");
@@ -24,81 +30,243 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
 
   const [index, setIndex] = useState(startIndex);
   const [progress, setProgress] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startedAt = useRef(Date.now());
-  const elapsed = useRef(0);
-  const [paused, setPaused] = useState(false);
 
-  const story = stories[index];
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startedAt   = useRef(Date.now());
+  const elapsed     = useRef(0);
+  const pausedRef   = useRef(false);
 
-  // Touch swipe
-  const touchStartX = useRef(0);
+  const story   = stories[index];
+  const isOwner = user?.id === story?.userId;
+
+  // ── Zoom / pan — driven via refs directly into the DOM ───────────────────
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgWrapRef   = useRef<HTMLDivElement>(null);
+  const scaleRef     = useRef(1);
+  const panXRef      = useRef(0);
+  const panYRef      = useRef(0);
+
+  function applyTransform(s: number, x: number, y: number, animated = false) {
+    const el = imgWrapRef.current;
+    if (!el) return;
+    el.style.transition = animated ? "transform 0.2s ease" : "none";
+    el.style.transform  = `translate(${x}px, ${y}px) scale(${s})`;
+    scaleRef.current = s;
+    panXRef.current  = x;
+    panYRef.current  = y;
+  }
+
+  function resetZoom(animated = false) {
+    applyTransform(MIN_SCALE, 0, 0, animated);
+  }
+
+  function clampPan(s: number, x: number, y: number): { x: number; y: number } {
+    const el = containerRef.current;
+    if (!el) return { x, y };
+    const maxX = (s - 1) * el.clientWidth  / 2;
+    const maxY = (s - 1) * el.clientHeight / 2;
+    return {
+      x: Math.max(-maxX, Math.min(maxX, x)),
+      y: Math.max(-maxY, Math.min(maxY, y)),
+    };
+  }
+
+  // ── Timer ─────────────────────────────────────────────────────────────────
+  // Keep tick logic in a ref so resumeTimer always calls the current version
+  const tickFnRef = useRef<() => void>(() => {});
+  tickFnRef.current = () => {
+    const spent = Date.now() - startedAt.current + elapsed.current;
+    const pct   = Math.min(spent / DURATION_MS, 1);
+    setProgress(pct);
+    if (pct >= 1) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      goNextCb.current();
+    }
+  };
+
+  function pauseTimer() {
+    if (pausedRef.current) return;
+    elapsed.current += Date.now() - startedAt.current;
+    if (timerRef.current) clearInterval(timerRef.current);
+    pausedRef.current = true;
+  }
+
+  function resumeTimer() {
+    if (!pausedRef.current) return;
+    startedAt.current  = Date.now();
+    timerRef.current   = setInterval(() => tickFnRef.current(), 50);
+    pausedRef.current  = false;
+  }
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  // Stable refs so touch handlers (captured in useEffect) always have latest
+  const goNextCb = useRef<() => void>(() => {});
+  const goPrevCb = useRef<() => void>(() => {});
 
   const goNext = useCallback(() => {
+    resetZoom();
     if (index < stories.length - 1) {
       setIndex((i) => i + 1);
     } else {
       onClose();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, stories.length, onClose]);
 
   const goPrev = useCallback(() => {
+    resetZoom();
     if (index > 0) setIndex((i) => i - 1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index]);
 
-  // Progress timer
+  useEffect(() => { goNextCb.current = goNext; }, [goNext]);
+  useEffect(() => { goPrevCb.current = goPrev; }, [goPrev]);
+
+  // Auto-advance timer; reset on each story change
   useEffect(() => {
-    elapsed.current = 0;
+    elapsed.current   = 0;
     startedAt.current = Date.now();
     setProgress(0);
-    setPaused(false);
-
-    timerRef.current = setInterval(() => {
-      const spent = Date.now() - startedAt.current + elapsed.current;
-      const pct = Math.min(spent / DURATION_MS, 1);
-      setProgress(pct);
-      if (pct >= 1) {
-        clearInterval(timerRef.current!);
-        goNext();
-      }
-    }, 50);
-
+    pausedRef.current = false;
+    timerRef.current  = setInterval(() => tickFnRef.current(), 50);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [index, goNext]);
+  }, [index]);
 
-  function pauseTimer() {
-    if (paused) return;
-    elapsed.current += Date.now() - startedAt.current;
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPaused(true);
-  }
-
-  function resumeTimer() {
-    if (!paused) return;
-    startedAt.current = Date.now();
-    timerRef.current = setInterval(() => {
-      const spent = Date.now() - startedAt.current + elapsed.current;
-      const pct = Math.min(spent / DURATION_MS, 1);
-      setProgress(pct);
-      if (pct >= 1) {
-        clearInterval(timerRef.current!);
-        goNext();
-      }
-    }, 50);
-    setPaused(false);
-  }
-
-  // Keyboard nav
+  // ── Keyboard ──────────────────────────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft") goPrev();
+      if (e.key === "Escape")      onClose();
+      if (e.key === "ArrowRight")  goNextCb.current();
+      if (e.key === "ArrowLeft")   goPrevCb.current();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, goNext, goPrev]);
+  }, [onClose]);
 
+  // ── Touch gestures ────────────────────────────────────────────────────────
+  const lastTapTime     = useRef(0);
+  const pinchStartDist  = useRef(0);
+  const pinchStartScale = useRef(1);
+  const dragStartPanX   = useRef(0);
+  const dragStartPanY   = useRef(0);
+  const touchStartX     = useRef(0);
+  const touchStartY     = useRef(0);
+  const isPinching      = useRef(false);
+  const isDragging      = useRef(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    function onTouchStart(e: TouchEvent) {
+      // ── Two-finger pinch ─────────────────────────────────────────────
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        isPinching.current    = true;
+        isDragging.current    = false;
+        pinchStartDist.current  = touchDist(e.touches[0], e.touches[1]);
+        pinchStartScale.current = scaleRef.current;
+        pauseTimer();
+        return;
+      }
+
+      // ── Single finger ────────────────────────────────────────────────
+      const touch = e.touches[0];
+      touchStartX.current   = touch.clientX;
+      touchStartY.current   = touch.clientY;
+      dragStartPanX.current = panXRef.current;
+      dragStartPanY.current = panYRef.current;
+      isPinching.current    = false;
+      isDragging.current    = false;
+      pauseTimer();
+
+      // Double-tap: toggle 1x ↔ 2x
+      const now = Date.now();
+      if (now - lastTapTime.current < 300) {
+        e.preventDefault();
+        if (scaleRef.current > 1.1) {
+          resetZoom(true);
+        } else {
+          applyTransform(2, 0, 0, true);
+        }
+        lastTapTime.current = 0;
+      } else {
+        lastTapTime.current = now;
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      // ── Pinch zoom ───────────────────────────────────────────────────
+      if (e.touches.length === 2 && isPinching.current) {
+        e.preventDefault();
+        const d        = touchDist(e.touches[0], e.touches[1]);
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE,
+          pinchStartScale.current * (d / pinchStartDist.current),
+        ));
+        const { x, y } = clampPan(newScale, panXRef.current, panYRef.current);
+        applyTransform(newScale, x, y);
+        return;
+      }
+
+      // ── Drag-to-pan (only while zoomed) ─────────────────────────────
+      if (e.touches.length === 1 && !isPinching.current && scaleRef.current > 1.01) {
+        e.preventDefault();
+        isDragging.current = true;
+        const dx = e.touches[0].clientX - touchStartX.current;
+        const dy = e.touches[0].clientY - touchStartY.current;
+        const { x, y } = clampPan(
+          scaleRef.current,
+          dragStartPanX.current + dx,
+          dragStartPanY.current + dy,
+        );
+        applyTransform(scaleRef.current, x, y);
+      }
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      // Pinch released
+      if (isPinching.current) {
+        if (e.touches.length < 2) {
+          isPinching.current = false;
+          // Snap back if barely zoomed
+          if (scaleRef.current < 1.05) resetZoom(true);
+          resumeTimer();
+        }
+        return;
+      }
+
+      if (e.touches.length > 0) return;
+
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+
+      // Horizontal swipe nav — only at 1× and only when not dragging
+      if (!isDragging.current && scaleRef.current <= 1.01) {
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          dx < 0 ? goNextCb.current() : goPrevCb.current();
+          return;
+        }
+      }
+
+      isDragging.current = false;
+      resumeTimer();
+    }
+
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove",  onTouchMove,  { passive: false });
+    el.addEventListener("touchend",   onTouchEnd,   { passive: false });
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove",  onTouchMove);
+      el.removeEventListener("touchend",   onTouchEnd);
+    };
+  }, [index]); // re-register when story changes so clampPan sees fresh container size
+
+  // Always reset zoom on story change (covers keyboard nav too)
+  useEffect(() => { resetZoom(); }, [index]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete() {
     try {
       await deleteStory(story);
@@ -112,37 +280,69 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
   }
 
   function expiresLabel(): string {
-    const msLeft = new Date(story.expiresAt).getTime() - Date.now();
+    const msLeft     = new Date(story.expiresAt).getTime() - Date.now();
     const minutesLeft = Math.floor(msLeft / 60000);
-    if (minutesLeft < 1) return t("expiresSoon");
+    if (minutesLeft < 1)  return t("expiresSoon");
     if (minutesLeft < 60) return t("expiresInMinutes", { minutes: minutesLeft });
     return t("expiresInHours", { hours: Math.floor(minutesLeft / 60) });
   }
 
   if (!story) return null;
 
-  const isOwner = user?.id === story.userId;
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.95)" }}
-      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; pauseTimer(); }}
-      onTouchEnd={(e) => {
-        const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 40) { dx < 0 ? goNext() : goPrev(); }
-        else resumeTimer();
-      }}
-      onMouseDown={pauseTimer}
-      onMouseUp={resumeTimer}
+      style={{ background: "#000" }}
     >
-      {/* Story card */}
+      {/* ── Story card ─────────────────────────────────────────────────── */}
       <div
-        className="relative flex flex-col"
+        className="relative"
         style={{ width: "min(100vw, 400px)", height: "min(100vh, 710px)", maxHeight: "100dvh" }}
       >
+        {/* Image container — touch + mouse target */}
+        <div
+          ref={containerRef}
+          className="absolute inset-0 rounded-xl overflow-hidden"
+          style={{ touchAction: "none", background: "#000" }}
+          onMouseDown={() => pauseTimer()}
+          onMouseUp={() => resumeTimer()}
+        >
+          {/* Zoom / pan wrapper — transform applied here */}
+          <div
+            ref={imgWrapRef}
+            style={{
+              position: "absolute",
+              inset: 0,
+              transformOrigin: "center",
+              willChange: "transform",
+            }}
+          >
+            <Image
+              key={story.id}
+              src={story.imageUrl}
+              alt={story.caption ?? "Story"}
+              fill
+              className="object-cover"
+              unoptimized
+              priority
+            />
+          </div>
+
+          {/* Caption */}
+          {story.caption && (
+            <div
+              className="absolute bottom-0 left-0 right-0 px-4 py-6 pointer-events-none"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}
+            >
+              <p className="text-sm text-center" style={{ color: "white", lineHeight: 1.5 }}>
+                {story.caption}
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Progress bars */}
-        <div className="absolute top-3 left-3 right-3 z-10 flex gap-1">
+        <div className="absolute top-3 left-3 right-3 z-10 flex gap-1 pointer-events-none">
           {stories.map((_, i) => (
             <div
               key={i}
@@ -161,7 +361,7 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
           ))}
         </div>
 
-        {/* Header: avatar + name + time + close */}
+        {/* Header */}
         <div className="absolute top-7 left-3 right-3 z-10 flex items-center gap-2">
           <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
             <UserAvatar src={story.author.avatarUrl ?? ""} alt={story.author.name} fill />
@@ -174,7 +374,6 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
               {expiresLabel()}
             </p>
           </div>
-
           {isOwner && (
             <button
               type="button"
@@ -186,7 +385,6 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
               <Trash2 size={14} color="white" />
             </button>
           )}
-
           <button
             type="button"
             onClick={onClose}
@@ -198,53 +396,28 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
           </button>
         </div>
 
-        {/* Image */}
-        <div className="relative w-full h-full rounded-xl overflow-hidden">
-          <Image
-            key={story.id}
-            src={story.imageUrl}
-            alt={story.caption ?? "Story"}
-            fill
-            className="object-cover"
-            unoptimized
-            priority
-          />
-
-          {/* Caption */}
-          {story.caption && (
-            <div
-              className="absolute bottom-0 left-0 right-0 px-4 py-6"
-              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }}
-            >
-              <p className="text-sm text-center" style={{ color: "white", lineHeight: 1.5 }}>
-                {story.caption}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Tap zones for prev/next (desktop) */}
+        {/* Desktop tap zones (hidden on mobile — touch handles it) */}
         <button
           type="button"
-          className="absolute left-0 top-0 bottom-0 w-1/3 opacity-0"
-          onClick={(e) => { e.stopPropagation(); goPrev(); }}
+          className="absolute left-0 top-0 bottom-0 w-1/3 z-10 opacity-0 hidden md:block"
+          onClick={() => goPrevCb.current()}
           aria-label="Previous"
         />
         <button
           type="button"
-          className="absolute right-0 top-0 bottom-0 w-1/3 opacity-0"
-          onClick={(e) => { e.stopPropagation(); goNext(); }}
+          className="absolute right-0 top-0 bottom-0 w-1/3 z-10 opacity-0 hidden md:block"
+          onClick={() => goNextCb.current()}
           aria-label="Next"
         />
       </div>
 
-      {/* Desktop prev/next arrows */}
+      {/* Desktop arrows */}
       {index > 0 && (
         <button
           type="button"
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 hidden md:flex"
+          className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full items-center justify-center transition-opacity hover:opacity-80 hidden md:flex"
           style={{ background: "rgba(255,255,255,0.15)" }}
-          onClick={goPrev}
+          onClick={() => goPrevCb.current()}
         >
           <ChevronLeft size={20} color="white" />
         </button>
@@ -252,9 +425,9 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
       {index < stories.length - 1 && (
         <button
           type="button"
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center transition-opacity hover:opacity-80 hidden md:flex"
+          className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full items-center justify-center transition-opacity hover:opacity-80 hidden md:flex"
           style={{ background: "rgba(255,255,255,0.15)" }}
-          onClick={goNext}
+          onClick={() => goNextCb.current()}
         >
           <ChevronRight size={20} color="white" />
         </button>
