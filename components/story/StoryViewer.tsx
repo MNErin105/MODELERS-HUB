@@ -16,7 +16,7 @@ type Props = {
   onDeleted?: (storyId: string) => void;
 };
 
-const DURATION_MS = 5000;
+const DURATION_MS = 12000;
 const MIN_SCALE = 1;
 const MAX_SCALE = 3;
 
