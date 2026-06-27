@@ -119,6 +119,22 @@
   "workGrid": {
     "empty": "作品が見つかりませんでした。"
   },
+  "story": {
+    "addStory": "ストーリーを追加",
+    "myStory": "マイストーリー",
+    "post": "投稿する",
+    "cancel": "キャンセル",
+    "captionPlaceholder": "キャプションを入力...",
+    "captionMaxHint": "100文字まで",
+    "expiresInHours": "{hours}時間後に消えます",
+    "expiresInMinutes": "{minutes}分後に消えます",
+    "expiresSoon": "もうすぐ消えます",
+    "uploading": "投稿中...",
+    "close": "閉じる",
+    "noImage": "画像を選択してください。",
+    "tapToSelect": "タップして画像を選択",
+    "noStories": "ストーリーはまだありません"
+  },
   "home": {
     "filters": {
       "sortBy": "並び替え:",

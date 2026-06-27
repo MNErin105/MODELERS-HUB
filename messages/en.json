@@ -119,6 +119,22 @@
   "workGrid": {
     "empty": "No works found."
   },
+  "story": {
+    "addStory": "Add Story",
+    "myStory": "My Story",
+    "post": "Post",
+    "cancel": "Cancel",
+    "captionPlaceholder": "Add a caption...",
+    "captionMaxHint": "Up to 100 characters",
+    "expiresInHours": "Expires in {hours}h",
+    "expiresInMinutes": "Expires in {minutes}m",
+    "expiresSoon": "Expires soon",
+    "uploading": "Posting...",
+    "close": "Close",
+    "noImage": "Please select an image.",
+    "tapToSelect": "Tap to select an image",
+    "noStories": "No stories yet"
+  },
   "home": {
     "filters": {
       "sortBy": "Sort:",

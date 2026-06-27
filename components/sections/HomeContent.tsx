@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Users, Loader2 } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
-import { Category, Post } from "@/lib/types";
+import { Category, Post, Story } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
 import { getPostsForHome } from "@/lib/supabase/queries";
@@ -14,6 +14,9 @@ import NewArrivalsSection from "./NewArrivalsSection";
 import AllCategoryRankings from "./AllCategoryRankings";
 import WorkGrid from "@/components/ui/WorkGrid";
 import CategoryFilter from "@/components/ui/CategoryFilter";
+import StoryBar from "@/components/story/StoryBar";
+import StoryViewer from "@/components/story/StoryViewer";
+import StoryCreateModal from "@/components/story/StoryCreateModal";
 
 // ── People card ───────────────────────────────────────────────────────────────
 
@@ -62,6 +65,12 @@ export default function HomeContent() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  // Stories state
+  const [storyRefreshKey, setStoryRefreshKey] = useState(0);
+  const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
+  const [viewerStart, setViewerStart] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
   useEffect(() => {
     getPostsForHome(200).then((data) => {
       setPosts(data);
@@ -107,6 +116,13 @@ export default function HomeContent() {
 
   return (
     <div style={{ background: "var(--bg-primary)" }}>
+      {/* Story bar */}
+      <StoryBar
+        refreshKey={storyRefreshKey}
+        onStoryClick={(stories, startIndex) => { setViewerStories(stories); setViewerStart(startIndex); }}
+        onAddStory={() => setShowCreateModal(true)}
+      />
+
       {/* Category filter */}
       <div className="py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
@@ -170,6 +186,34 @@ export default function HomeContent() {
             <AllCategoryRankings posts={posts} />
           </div>
         </>
+      )}
+
+      {/* Story Viewer */}
+      {viewerStories && (
+        <StoryViewer
+          stories={viewerStories}
+          startIndex={viewerStart}
+          onClose={() => setViewerStories(null)}
+          onDeleted={(id) => {
+            setViewerStories((prev) => {
+              if (!prev) return null;
+              const next = prev.filter((s) => s.id !== id);
+              return next.length > 0 ? next : null;
+            });
+            setStoryRefreshKey((k) => k + 1);
+          }}
+        />
+      )}
+
+      {/* Story Create Modal */}
+      {showCreateModal && (
+        <StoryCreateModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            setStoryRefreshKey((k) => k + 1);
+          }}
+        />
       )}
     </div>
   );
