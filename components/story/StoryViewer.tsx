@@ -331,16 +331,23 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "#000" }}
     >
-      {/* ── Story card ─────────────────────────────────────────────────── */}
+      {/* ── Story card — 9:16 phone frame ────────────────────────────── */}
+      {/* Mobile: fills the viewport width and maintains 9:16 height.       */}
+      {/* Desktop: centered 430px-wide card; dark backdrop fills the sides. */}
       <div
         ref={storyCardRef}
         className="relative"
-        style={{ width: "min(100vw, 400px)", height: "min(100vh, 710px)", maxHeight: "100dvh" }}
+        style={{
+          width: "min(100dvw, 430px)",
+          aspectRatio: "9 / 16",
+          maxHeight: "100dvh",
+        }}
       >
         {/* Image container — dimension reference for clampPan, mouse pause/resume */}
+        {/* rounded-2xl on desktop only; full-bleed on mobile */}
         <div
           ref={containerRef}
-          className="absolute inset-0 rounded-xl overflow-hidden"
+          className="absolute inset-0 overflow-hidden md:rounded-2xl"
           style={{ background: "#000" }}
           onMouseDown={() => pauseTimer()}
           onMouseUp={() => resumeTimer()}
@@ -358,12 +365,14 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
               touchAction: "none",
             }}
           >
+            {/* object-contain: vertical images fill the frame; landscape/square   */}
+            {/* images show with black bars so the full photo is always visible. */}
             <Image
               key={story.id}
               src={story.imageUrl}
               alt={story.caption ?? "Story"}
               fill
-              className="object-cover"
+              className="object-contain"
               unoptimized
               priority
             />
