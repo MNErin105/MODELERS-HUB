@@ -2,23 +2,32 @@
 
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Post } from "@/lib/types";
+import { CATEGORIES, Category, Post } from "@/lib/types";
 import WorkGrid from "@/components/ui/WorkGrid";
+import SectionCategoryFilter from "@/components/ui/SectionCategoryFilter";
 
 const PAGE_SIZE = 8;
 
-type Props = { posts: Post[] };
+type Props = { posts: Post[]; categories?: Category[] };
 
-export default function NewArrivalsSection({ posts }: Props) {
+export default function NewArrivalsSection({ posts, categories }: Props) {
   const [page, setPage] = useState(0);
+  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
 
-  const sorted = useMemo(
-    () =>
-      [...posts].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      ),
-    [posts],
-  );
+  const allCategories = categories ?? CATEGORIES;
+
+  const sorted = useMemo(() => {
+    let result = [...posts];
+    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    return result.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [posts, activeCategory]);
+
+  function handleCategoryChange(cat: Category | null) {
+    setActiveCategory(cat);
+    setPage(0);
+  }
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage   = Math.min(page, totalPages - 1);
@@ -26,11 +35,18 @@ export default function NewArrivalsSection({ posts }: Props) {
 
   return (
     <section className="w-full py-10 px-6 max-w-[1440px] mx-auto">
-      <div className="flex items-baseline gap-4 mb-6">
-        <h2 className="section-heading">New Arrivals</h2>
-        <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-          latest posts
-        </span>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6">
+        <div className="flex items-baseline gap-4 shrink-0">
+          <h2 className="section-heading">New Arrivals</h2>
+          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+            latest posts
+          </span>
+        </div>
+        <SectionCategoryFilter
+          categories={allCategories}
+          active={activeCategory}
+          onChange={handleCategoryChange}
+        />
       </div>
 
       <WorkGrid posts={pagePosts} />

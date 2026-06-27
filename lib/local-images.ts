@@ -6,6 +6,7 @@ const POOL: Record<Category, string[]> = {
   "Car":             [1, 2, 3, 4, 5].map((n) => `/images/car/0${n}.jpg`),
   "Character Model": [1, 2, 3, 4, 5].map((n) => `/images/character/0${n}.jpg`),
   "Diorama":         [1, 2, 3, 4, 5].map((n) => `/images/diorama/0${n}.jpg`),
+  "Fighter":         [1, 2, 3, 4, 5].map((n) => `/images/military/0${n}.jpg`),
   "Aircraft":        [1, 2, 3, 4, 5].map((n) => `/images/military/0${n}.jpg`),
   "Ship":            [1, 2, 3, 4, 5].map((n) => `/images/military/0${n}.jpg`),
   "Figure":          [1, 2, 3, 4, 5].map((n) => `/images/character/0${n}.jpg`),

@@ -4,6 +4,13 @@ import { StoredFile } from "@/lib/imageUtils";
 
 // ── Raw row type ──────────────────────────────────────────────────────────────
 
+type RawProfile = {
+  id: string;
+  display_name: string;
+  username: string;
+  avatar_url: string | null;
+};
+
 type RawStory = {
   id: string;
   user_id: string;
@@ -11,15 +18,14 @@ type RawStory = {
   caption: string | null;
   created_at: string;
   expires_at: string;
-  profiles: {
-    id: string;
-    display_name: string;
-    username: string;
-    avatar_url: string | null;
-  } | null;
+  // PostgREST returns a single object for many-to-one FK joins,
+  // but guard against an array in case the relationship is inferred differently.
+  profiles: RawProfile | RawProfile[] | null;
 };
 
 function mapStory(raw: RawStory): Story {
+  // Normalise: PostgREST should return an object (many-to-one), but handle array defensively.
+  const profile = Array.isArray(raw.profiles) ? raw.profiles[0] ?? null : raw.profiles;
   return {
     id:        raw.id,
     userId:    raw.user_id,
@@ -28,10 +34,10 @@ function mapStory(raw: RawStory): Story {
     createdAt: raw.created_at,
     expiresAt: raw.expires_at,
     author: {
-      id:        raw.profiles?.id        ?? raw.user_id,
-      name:      raw.profiles?.display_name ?? "Unknown",
-      username:  raw.profiles?.username  ?? "",
-      avatarUrl: raw.profiles?.avatar_url ?? null,
+      id:        profile?.id        ?? raw.user_id,
+      name:      profile?.display_name ?? "Unknown",
+      username:  profile?.username  ?? "",
+      avatarUrl: profile?.avatar_url ?? null,
     },
   };
 }
@@ -43,13 +49,21 @@ const STORY_SELECT = [
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-// Returns all active (non-expired) stories, newest first.
-// RLS on the stories table already filters out expired rows.
+// Returns all active (non-expired) stories for ALL users, newest first.
+// Design: no follow-filter — all users' stories are shown (suits a small community / testing).
+// RLS "stories: public read (active only)" enforces expires_at > now() server-side.
 export async function getActiveStories(): Promise<Story[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("stories")
     .select(STORY_SELECT)
     .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[getActiveStories] query error:", error.message, error);
+    return [];
+  }
+
+  console.log(`[getActiveStories] fetched ${data?.length ?? 0} stories`);
   return (data ?? []).map((r) => mapStory(r as unknown as RawStory));
 }
 

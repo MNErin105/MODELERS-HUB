@@ -9,11 +9,13 @@ import { Category, Post, Story } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
 import { getPostsForHome } from "@/lib/supabase/queries";
+import { useCategoryOrder } from "@/lib/hooks/useCategoryOrder";
 import PopularSection from "./PopularSection";
 import NewArrivalsSection from "./NewArrivalsSection";
 import AllCategoryRankings from "./AllCategoryRankings";
 import WorkGrid from "@/components/ui/WorkGrid";
 import CategoryFilter from "@/components/ui/CategoryFilter";
+import CategoryOrderModal from "@/components/ui/CategoryOrderModal";
 import StoryBar from "@/components/story/StoryBar";
 import StoryViewer from "@/components/story/StoryViewer";
 import StoryCreateModal from "@/components/story/StoryCreateModal";
@@ -64,6 +66,10 @@ export default function HomeContent() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  // Category order (persisted to localStorage)
+  const { order: categoryOrder, saveOrder, resetOrder } = useCategoryOrder();
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // Stories state
   const [storyRefreshKey, setStoryRefreshKey] = useState(0);
@@ -125,7 +131,12 @@ export default function HomeContent() {
 
       {/* Category filter */}
       <div className="py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-        <CategoryFilter active={activeCategory} onChange={setActiveCategory} />
+        <CategoryFilter
+          active={activeCategory}
+          onChange={setActiveCategory}
+          order={categoryOrder}
+          onReorderClick={() => setShowOrderModal(true)}
+        />
       </div>
 
       {loading ? (
@@ -178,14 +189,24 @@ export default function HomeContent() {
         </div>
       ) : (
         <>
-          <NewArrivalsSection posts={posts} />
+          <NewArrivalsSection posts={posts} categories={categoryOrder} />
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <PopularSection posts={posts} />
+            <PopularSection posts={posts} categories={categoryOrder} />
           </div>
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <AllCategoryRankings posts={posts} />
           </div>
         </>
+      )}
+
+      {/* Category order modal */}
+      {showOrderModal && (
+        <CategoryOrderModal
+          order={categoryOrder}
+          onSave={saveOrder}
+          onReset={resetOrder}
+          onClose={() => setShowOrderModal(false)}
+        />
       )}
 
       {/* Story Viewer */}

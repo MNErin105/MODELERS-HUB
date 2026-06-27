@@ -21,7 +21,13 @@ export default function StoryBar({ onStoryClick, onAddStory, refreshKey = 0 }: P
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getActiveStories().then(setStories);
+    getActiveStories().then((fetched) => {
+      console.log(
+        `[StoryBar] ${fetched.length} active stories:`,
+        fetched.map((s) => ({ id: s.id, userId: s.userId, author: s.author.name })),
+      );
+      setStories(fetched);
+    });
   }, [refreshKey]);
 
   // Group stories: current user first, then others grouped by user

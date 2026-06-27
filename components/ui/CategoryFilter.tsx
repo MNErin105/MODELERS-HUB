@@ -1,15 +1,20 @@
 "use client";
 
+import { Settings2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { CATEGORIES, Category } from "@/lib/types";
 
 type Props = {
   active: Category | null;
   onChange: (cat: Category | null) => void;
+  order?: Category[];
+  onReorderClick?: () => void;
 };
 
-export default function CategoryFilter({ active, onChange }: Props) {
+export default function CategoryFilter({ active, onChange, order, onReorderClick }: Props) {
   const tc = useTranslations("category");
+  const to = useTranslations("categoryOrder");
+  const categories = order ?? CATEGORIES;
 
   return (
     <div className="w-full overflow-x-auto pb-1">
@@ -25,7 +30,8 @@ export default function CategoryFilter({ active, onChange }: Props) {
         >
           {tc("all")}
         </button>
-        {CATEGORIES.map((cat) => (
+
+        {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => onChange(cat === active ? null : cat)}
@@ -39,6 +45,22 @@ export default function CategoryFilter({ active, onChange }: Props) {
             {tc(`names.${cat.replace(/\s+/g, "_")}`)}
           </button>
         ))}
+
+        {onReorderClick && (
+          <button
+            onClick={onReorderClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all hover:opacity-80"
+            style={{
+              background: "var(--bg-secondary)",
+              color: "var(--text-muted)",
+              border: "1px solid var(--border-subtle)",
+            }}
+            title={to("modalTitle")}
+          >
+            <Settings2 size={13} />
+            {to("button")}
+          </button>
+        )}
       </div>
     </div>
   );
