@@ -153,12 +153,24 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
   const touchStartY     = useRef(0);
   const isPinching      = useRef(false);
   const isDragging      = useRef(false);
+  // Set to false when the touch lands on a button/link so move+end handlers skip it
+  const isGestureActive = useRef(false);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     function onTouchStart(e: TouchEvent) {
+      // ── Skip gesture handling when touching a button / link / icon ───
+      // Without this guard, preventDefault() blocks the click event on
+      // the delete and close buttons that float above the image container.
+      const target = e.target as Element;
+      if (target.closest("button, a, [role='button']")) {
+        isGestureActive.current = false;
+        return;
+      }
+      isGestureActive.current = true;
+
       // ── Two-finger pinch ─────────────────────────────────────────────
       if (e.touches.length === 2) {
         e.preventDefault();
@@ -196,6 +208,8 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
     }
 
     function onTouchMove(e: TouchEvent) {
+      if (!isGestureActive.current) return;
+
       // ── Pinch zoom ───────────────────────────────────────────────────
       if (e.touches.length === 2 && isPinching.current) {
         e.preventDefault();
@@ -224,6 +238,8 @@ export default function StoryViewer({ stories, startIndex = 0, onClose, onDelete
     }
 
     function onTouchEnd(e: TouchEvent) {
+      if (!isGestureActive.current) return;
+
       // Pinch released
       if (isPinching.current) {
         if (e.touches.length < 2) {
