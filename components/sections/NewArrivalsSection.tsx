@@ -8,9 +8,9 @@ import SectionCategoryFilter from "@/components/ui/SectionCategoryFilter";
 
 const PAGE_SIZE = 8;
 
-type Props = { posts: Post[]; categories?: Category[] };
+type Props = { posts: Post[]; categories?: Category[]; onReorderClick?: () => void };
 
-export default function NewArrivalsSection({ posts, categories }: Props) {
+export default function NewArrivalsSection({ posts, categories, onReorderClick }: Props) {
   const [page, setPage] = useState(0);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
 
@@ -46,6 +46,7 @@ export default function NewArrivalsSection({ posts, categories }: Props) {
           categories={allCategories}
           active={activeCategory}
           onChange={handleCategoryChange}
+          onReorderClick={onReorderClick}
         />
       </div>
 

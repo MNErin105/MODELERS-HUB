@@ -189,9 +189,9 @@ export default function HomeContent() {
         </div>
       ) : (
         <>
-          <NewArrivalsSection posts={posts} categories={categoryOrder} />
+          <NewArrivalsSection posts={posts} categories={categoryOrder} onReorderClick={() => setShowOrderModal(true)} />
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
-            <PopularSection posts={posts} categories={categoryOrder} />
+            <PopularSection posts={posts} categories={categoryOrder} onReorderClick={() => setShowOrderModal(true)} />
           </div>
           <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <AllCategoryRankings posts={posts} />
