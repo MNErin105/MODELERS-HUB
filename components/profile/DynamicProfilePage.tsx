@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
-import { getPostsByUserId, getPostsForHome } from "@/lib/supabase/queries";
+import { getPostsByUserId } from "@/lib/supabase/queries";
 import { fetchPinnedPostIds, addPin, removePin } from "@/lib/pins";
 import ProfilePageClient from "./ProfilePageClient";
 import type { Post } from "@/lib/types";
@@ -13,7 +13,6 @@ export default function DynamicProfilePage() {
   const router = useRouter();
   const { user, loading, signOut, updateAvatar } = useAuth();
   const [ownPosts,  setOwnPosts]  = useState<Post[]>([]);
-  const [allPosts,  setAllPosts]  = useState<Post[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [pinnedPostIds, setPinnedPostIds] = useState<string[]>([]);
   const [pinError, setPinError] = useState<string | null>(null);
@@ -28,12 +27,12 @@ export default function DynamicProfilePage() {
     if (!user) return;
     Promise.all([
       getPostsByUserId(user.id),
-      getPostsForHome(100),
       fetchPinnedPostIds(user.id),
-    ]).then(([owned, all, pinIds]) => {
+    ]).then(([owned, pinIds]) => {
       setOwnPosts(owned);
-      setAllPosts(all);
       setPinnedPostIds(pinIds);
+      setPostsLoading(false);
+    }).catch(() => {
       setPostsLoading(false);
     });
   }, [user?.id]);
@@ -78,7 +77,6 @@ export default function DynamicProfilePage() {
       totalSaves={totalSaves}
       isOwnProfile
       username={user.username}
-      allPosts={allPosts}
       onSignOut={signOut}
       onUpdateAvatar={updateAvatar}
       pinnedPostIds={pinnedPostIds}

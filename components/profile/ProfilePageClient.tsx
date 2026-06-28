@@ -21,7 +21,6 @@ type Props = {
   totalSaves: number;
   isOwnProfile?: boolean;
   username?: string;
-  allPosts?: Post[];
   onSignOut?: () => void;
   onUpdateAvatar?: (file: File) => Promise<void>;
   pinnedPostIds?: string[];
@@ -31,7 +30,7 @@ type Props = {
 
 export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
-  isOwnProfile = false, username, allPosts = [],
+  isOwnProfile = false, username,
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
@@ -44,8 +43,8 @@ export default function ProfilePageClient({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const wipPosts      = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
-  const likedPosts    = isOwnProfile ? allPosts.filter((p) => likedIds.has(p.id))  : [];
-  const savedPosts    = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id)) : [];
+  const likedPosts    = isOwnProfile ? authorPosts.filter((p) => likedIds.has(p.id)) : [];
+  const savedPosts    = isOwnProfile ? authorPosts.filter((p) => savedIds.has(p.id)) : [];
   const pinnedSet     = new Set(pinnedPostIds);
   const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
   const unpinnedPosts = authorPosts.filter((p) => !pinnedSet.has(p.id));
