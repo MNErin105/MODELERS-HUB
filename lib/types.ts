@@ -4,7 +4,6 @@ export type Category =
   | "Car"
   | "Character Model"
   | "Diorama"
-  | "Fighter"
   | "Aircraft"
   | "Ship"
   | "Figure"
@@ -12,7 +11,7 @@ export type Category =
 
 export const CATEGORIES: Category[] = [
   "Gunpla", "Military", "Car", "Character Model", "Diorama",
-  "Fighter", "Figure", "Other",
+  "Aircraft", "Figure", "Other",
 ];
 
 export function categorySlug(c: Category): string {
@@ -53,11 +52,6 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
   "Diorama": {
     icon: "🏔️",
     description: "Scene and diorama builds combining models, bases, and environmental storytelling.",
-    subcategories: [],
-  },
-  "Fighter": {
-    icon: "✈️",
-    description: "Fighter aircraft scale models — jet fighters, propeller planes, and military aircraft.",
     subcategories: [],
   },
   "Aircraft": {

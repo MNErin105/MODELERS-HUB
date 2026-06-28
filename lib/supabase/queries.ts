@@ -9,7 +9,7 @@ export const CATEGORY_TO_DB: Record<string, string> = {
   Car:                "car_model",
   "Character Model":  "character_model",
   Diorama:            "diorama",
-  Fighter:            "fighter",
+  Aircraft:           "fighter",
   Figure:             "figure",
   Other:              "other",
 };
@@ -20,7 +20,7 @@ const DB_TO_CATEGORY: Record<string, Category> = {
   car_model:        "Car",
   character_model:  "Character Model",
   diorama:          "Diorama",
-  fighter:          "Fighter",
+  fighter:          "Aircraft",
   figure:           "Figure",
   other:            "Other",
 };

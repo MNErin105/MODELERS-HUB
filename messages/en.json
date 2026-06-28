@@ -52,7 +52,7 @@
       "Car": "Car",
       "Character_Model": "Character Model",
       "Diorama": "Diorama",
-      "Fighter": "Fighter",
+      "Aircraft": "Aircraft",
       "Figure": "Figure",
       "Other": "Other"
     },
@@ -62,7 +62,7 @@
       "Car": "Scale car models — racing, classic, and street builds.",
       "Character_Model": "Character and figure models — anime, sci-fi, and fantasy.",
       "Diorama": "Scene and diorama builds combining models, bases, and environmental storytelling.",
-      "Fighter": "Fighter aircraft scale models — jet fighters, propeller planes, and military aircraft.",
+      "Aircraft": "Scale aircraft models — fighters, bombers, civilian planes, and helicopters.",
       "Figure": "Standalone figures — resin kits, garage kits, and painted character figures.",
       "Other": "Sci-fi, fantasy, and other builds that don't fit neatly elsewhere."
     }
