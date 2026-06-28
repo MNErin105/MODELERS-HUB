@@ -28,12 +28,18 @@ export default function DynamicProfilePage() {
   }, [loading, user, router]);
 
   useEffect(() => {
-    getPostsByIds([...likedIds]).then(setLikedPosts);
-  }, [likedIds]);
+    if (!user) return;
+    const ids = [...likedIds];
+    if (ids.length === 0) { setLikedPosts([]); return; }
+    getPostsByIds(ids).then(setLikedPosts);
+  }, [likedIds, user]);
 
   useEffect(() => {
-    getPostsByIds([...savedIds]).then(setSavedPosts);
-  }, [savedIds]);
+    if (!user) return;
+    const ids = [...savedIds];
+    if (ids.length === 0) { setSavedPosts([]); return; }
+    getPostsByIds(ids).then(setSavedPosts);
+  }, [savedIds, user]);
 
   useEffect(() => {
     if (!user) return;
