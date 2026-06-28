@@ -243,6 +243,7 @@
       "addTag": "タグを追加…"
     },
     "allowSnsRepost": "Modelers HubのSNSアカウントへの掲載を許可する",
+    "allowSnsRepostNote": "今後、サイト内コンペ・PVなどで使用させていただく可能性があります。",
     "errors": {
       "title": "タイトルは必須です。",
       "description": "説明は必須です。",

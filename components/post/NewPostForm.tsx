@@ -509,18 +509,21 @@ export default function NewPostForm() {
           )}
 
           {/* ── SNS repost permission ────────────────────────────────────── */}
-          <label
-            className="flex items-center gap-3 cursor-pointer select-none"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            <input
-              type="checkbox"
-              checked={allowSnsRepost}
-              onChange={(e) => setAllowSnsRepost(e.target.checked)}
-              className="w-4 h-4 rounded accent-[var(--accent-primary)] cursor-pointer"
-            />
-            <span className="text-sm">{t("allowSnsRepost")}</span>
-          </label>
+          <div className="flex flex-col gap-1">
+            <label
+              className="flex items-center gap-3 cursor-pointer select-none"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <input
+                type="checkbox"
+                checked={allowSnsRepost}
+                onChange={(e) => setAllowSnsRepost(e.target.checked)}
+                className="w-4 h-4 rounded accent-[var(--accent-primary)] cursor-pointer"
+              />
+              <span className="text-sm">{t("allowSnsRepost")}</span>
+            </label>
+            <p className="text-xs pl-7" style={{ color: "var(--text-muted)" }}>{t("allowSnsRepostNote")}</p>
+          </div>
 
           {/* ── Submit ───────────────────────────────────────────────────── */}
           <div

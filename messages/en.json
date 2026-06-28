@@ -243,6 +243,7 @@
       "addTag": "Add tag…"
     },
     "allowSnsRepost": "Allow Modelers Hub to feature this post on our social media",
+    "allowSnsRepostNote": "Your work may be featured in future site competitions, promotional videos, and more.",
     "errors": {
       "title": "Title is required.",
       "description": "Description is required.",
