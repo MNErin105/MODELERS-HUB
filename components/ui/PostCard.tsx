@@ -24,8 +24,8 @@ export type PostBadge = {
  * Wide subjects (vehicles, aircraft) → 1:1.
  * Two heights create natural masonry variation.
  */
-function cardAspect(category: Category): "4/5" | "1/1" {
-  if (["Gunpla", "Character Model"].includes(category)) return "4/5";
+function cardAspect(categories: Category[]): "4/5" | "1/1" {
+  if (categories.some((c) => ["Gunpla", "Character Model"].includes(c))) return "4/5";
   return "1/1";
 }
 
@@ -40,7 +40,7 @@ export default function PostCard({ post, badge }: Props) {
   const liked = likedIds.has(post.id);
   const [saveAnim, setSaveAnim] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
-  const aspect = cardAspect(post.category);
+  const aspect = cardAspect(post.categories);
 
   function handleSave(e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation();
@@ -70,18 +70,23 @@ export default function PostCard({ post, badge }: Props) {
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
         />
 
-        {/* Category badge — top-left, always visible */}
-        <span
-          className="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-semibold z-10"
-          style={{
-            background:    "rgba(10,10,11,0.78)",
-            color:         "var(--accent-primary)",
-            fontFamily:    "var(--font-mono)",
-            backdropFilter:"blur(4px)",
-          }}
-        >
-          {post.category}
-        </span>
+        {/* Category badges — top-left, always visible */}
+        <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1">
+          {post.categories.map((cat) => (
+            <span
+              key={cat}
+              className="px-2 py-0.5 rounded text-xs font-semibold"
+              style={{
+                background:    "rgba(10,10,11,0.78)",
+                color:         "var(--accent-primary)",
+                fontFamily:    "var(--font-mono)",
+                backdropFilter:"blur(4px)",
+              }}
+            >
+              {cat}
+            </span>
+          ))}
+        </div>
 
         {/* Rank / Featured badge — top-right, only when provided */}
         {badge && (

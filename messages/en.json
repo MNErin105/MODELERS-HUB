@@ -104,14 +104,14 @@
       "works": "Works",
       "wip": "WIP",
       "liked": "Liked",
-      "bookmarks": "Bookmarks"
+      "saved": "Saved"
     }
   },
   "saved": {
     "title": "SAVED WORKS",
     "count": "{count} saved",
     "emptyTitle": "No saved works yet.",
-    "emptySubtitle": "Click the bookmark icon on any work to save it here.",
+    "emptySubtitle": "Click the save icon on any work to save it here.",
     "browseButton": "Browse works"
   },
   "follow": {
@@ -242,10 +242,12 @@
       "caption": "Caption…",
       "addTag": "Add tag…"
     },
+    "allowSnsRepost": "Allow Modelers Hub to feature this post on our social media",
     "errors": {
       "title": "Title is required.",
       "description": "Description is required.",
-      "images": "At least one image is required."
+      "images": "At least one image is required.",
+      "category": "Please select at least one category."
     },
     "upload": {
       "dropHint": "Drop images here or click to select",

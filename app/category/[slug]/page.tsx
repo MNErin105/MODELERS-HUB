@@ -15,7 +15,7 @@ export default async function CategoryPage({ params }: Props) {
   if (!category) notFound();
 
   const allPosts      = await getPostsForHome(200);
-  const categoryPosts = allPosts.filter((p) => p.category === category);
+  const categoryPosts = allPosts.filter((p) => p.categories.includes(category!));
 
   return (
     <CategoryPageClient

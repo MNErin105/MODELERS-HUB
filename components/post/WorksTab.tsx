@@ -16,6 +16,8 @@ import { categorySlug } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { translateTag } from "@/lib/tagTranslations";
 
+const ADMIN_UID = "770a5443-5285-4488-a662-c7fcab7310a6";
+
 type Props = { post: Post };
 
 export default function WorksTab({ post }: Props) {
@@ -23,6 +25,7 @@ export default function WorksTab({ post }: Props) {
   const locale = useLocale();
   const { user } = useAuth();
   const isAuthor = !!user && user.id === post.author.id;
+  const isAdmin  = !!user && user.id === ADMIN_UID;
 
   const [activeIdx, setActiveIdx]       = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -104,14 +107,19 @@ export default function WorksTab({ post }: Props) {
 
       {/* ── Right: Metadata ───────────────────────────────────────── */}
       <div className="lg:col-span-2 flex flex-col gap-5">
-        {/* Category */}
-        <Link
-          href={`/category/${categorySlug(post.category)}`}
-          className="inline-block w-fit px-3 py-1 rounded-full text-xs font-semibold hover:opacity-80"
-          style={{ background: "var(--accent-muted)", color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
-        >
-          {post.category}
-        </Link>
+        {/* Categories */}
+        <div className="flex flex-wrap gap-2">
+          {post.categories.map((cat) => (
+            <Link
+              key={cat}
+              href={`/category/${categorySlug(cat)}`}
+              className="inline-block w-fit px-3 py-1 rounded-full text-xs font-semibold hover:opacity-80"
+              style={{ background: "var(--accent-muted)", color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
+            >
+              {cat}
+            </Link>
+          ))}
+        </div>
 
         {/* Title */}
         <h1 className="text-2xl font-bold leading-tight" style={{ color: "var(--text-primary)" }}>
@@ -152,6 +160,21 @@ export default function WorksTab({ post }: Props) {
             {post.tags.map((tag) => (
               <TagBadge key={tag} label={translateTag(tag, locale)} size="md" />
             ))}
+          </div>
+        )}
+
+        {/* Admin SNS badge — visible only to the site admin */}
+        {isAdmin && (
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono"
+            style={{
+              background: post.allowSnsRepost ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+              border: `1px solid ${post.allowSnsRepost ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+              color: post.allowSnsRepost ? "#22c55e" : "#ef4444",
+            }}
+          >
+            <span>{post.allowSnsRepost ? "✅" : "❌"}</span>
+            <span>SNS掲載許可: {post.allowSnsRepost ? "許可" : "不許可"}</span>
           </div>
         )}
 

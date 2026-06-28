@@ -104,7 +104,7 @@
       "works": "作品",
       "wip": "WIP",
       "liked": "いいね",
-      "bookmarks": "保存済み"
+      "saved": "保存済み"
     }
   },
   "saved": {
@@ -242,10 +242,12 @@
       "caption": "キャプション…",
       "addTag": "タグを追加…"
     },
+    "allowSnsRepost": "Modelers HubのSNSアカウントへの掲載を許可する",
     "errors": {
       "title": "タイトルは必須です。",
       "description": "説明は必須です。",
-      "images": "画像を1枚以上追加してください。"
+      "images": "画像を1枚以上追加してください。",
+      "category": "カテゴリーを1つ以上選択してください。"
     },
     "upload": {
       "dropHint": "ここに画像をドロップ、またはクリックして選択",

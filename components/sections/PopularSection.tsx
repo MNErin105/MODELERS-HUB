@@ -18,7 +18,7 @@ export default function PopularSection({ posts, categories, onReorderClick }: Pr
 
   const sorted = useMemo(() => {
     let result = [...posts];
-    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    if (activeCategory) result = result.filter((p) => p.categories.includes(activeCategory!));
     return result.sort((a, b) => b.saveCount - a.saveCount);
   }, [posts, activeCategory]);
 

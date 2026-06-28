@@ -10,9 +10,9 @@ import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
 import AvatarCropModal from "./AvatarCropModal";
-import { Camera, ChevronLeft, Layers, BookMarked, Heart, Wrench, LogOut, Loader2, Pencil } from "lucide-react";
+import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil } from "lucide-react";
 
-type Tab = "works" | "wip" | "liked" | "bookmarks";
+type Tab = "works" | "wip" | "liked" | "saved";
 
 type Props = {
   author: Author;
@@ -41,21 +41,21 @@ export default function ProfilePageClient({
 
   const wipPosts      = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
   const likedPosts    = isOwnProfile ? allPosts.filter((p) => likedIds.has(p.id))  : [];
-  const bookmarkPosts = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id))  : [];
+  const savedPosts = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id)) : [];
 
   const tabPosts: Record<Tab, Post[]> = {
-    works:     authorPosts,
-    wip:       wipPosts,
-    liked:     likedPosts,
-    bookmarks: bookmarkPosts,
+    works: authorPosts,
+    wip:   wipPosts,
+    liked: likedPosts,
+    saved: savedPosts,
   };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
-    { key: "works",     label: t("tabs.works"),     icon: <Layers size={14} />,     count: authorPosts.length },
-    { key: "wip",       label: t("tabs.wip"),        icon: <Wrench size={14} />,     count: wipPosts.length },
+    { key: "works", label: t("tabs.works"), icon: <Layers size={14} />, count: authorPosts.length },
+    { key: "wip",   label: t("tabs.wip"),   icon: <Wrench size={14} />, count: wipPosts.length },
     ...(isOwnProfile ? [
-      { key: "liked"     as Tab, label: t("tabs.liked"),     icon: <Heart size={14} />,     count: likedPosts.length },
-      { key: "bookmarks" as Tab, label: t("tabs.bookmarks"), icon: <BookMarked size={14} />, count: bookmarkPosts.length },
+      { key: "liked" as Tab, label: t("tabs.liked"), icon: <Heart    size={14} />, count: likedPosts.length },
+      { key: "saved" as Tab, label: t("tabs.saved"), icon: <Bookmark size={14} />, count: savedPosts.length },
     ] : []),
   ];
 

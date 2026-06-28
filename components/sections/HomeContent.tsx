@@ -104,7 +104,7 @@ export default function HomeContent() {
 
   const filteredPosts = useMemo(() => {
     let result = posts;
-    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    if (activeCategory) result = result.filter((p) => p.categories.includes(activeCategory!));
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter(
@@ -112,7 +112,7 @@ export default function HomeContent() {
           p.title.toLowerCase().includes(q) ||
           p.tags.some((tag) => tag.toLowerCase().includes(q)) ||
           p.kit.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q)
+          p.categories.some((c) => c.toLowerCase().includes(q))
       );
     }
     return [...result].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

@@ -97,14 +97,15 @@ export default function EditPostForm({ post }: { post: Post }) {
   const techniqueSuggestions = useMemo(() => buildSuggestions(TECHNIQUE_VALUES, locale), [locale]);
 
   // ── Pre-fill from existing post ─────────────────────────────────────────────
-  const [title,       setTitle]       = useState(post.title);
-  const [description, setDescription] = useState(post.description);
-  const [category,    setCategory]    = useState<Category>(post.category);
-  const [kit,         setKit]         = useState(post.kit);
-  const [paints,      setPaints]      = useState<string[]>(post.paints);
-  const [tools,       setTools]       = useState<string[]>(post.tools);
-  const [techniques,  setTechniques]  = useState<string[]>(post.techniques);
-  const [tags,        setTags]        = useState<string[]>(post.tags);
+  const [title,          setTitle]          = useState(post.title);
+  const [description,    setDescription]    = useState(post.description);
+  const [categories,     setCategories]     = useState<Category[]>(post.categories);
+  const [kit,            setKit]            = useState(post.kit);
+  const [paints,         setPaints]         = useState<string[]>(post.paints);
+  const [tools,          setTools]          = useState<string[]>(post.tools);
+  const [techniques,     setTechniques]     = useState<string[]>(post.techniques);
+  const [tags,           setTags]           = useState<string[]>(post.tags);
+  const [allowSnsRepost, setAllowSnsRepost] = useState(post.allowSnsRepost);
 
   // Existing images: use the storage URL itself as the stable id
   const [coverImages, setCoverImages] = useState<UploadedImage[]>(() =>
@@ -155,6 +156,7 @@ export default function EditPostForm({ post }: { post: Post }) {
     if (!title.trim())            e.title       = t("errors.title");
     if (!description.trim())      e.description = t("errors.description");
     if (coverImages.length === 0) e.images      = t("errors.images");
+    if (categories.length === 0)  e.categories  = t("errors.category");
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -173,10 +175,11 @@ export default function EditPostForm({ post }: { post: Post }) {
       const { error: postError } = await supabase
         .from("posts")
         .update({
-          title:       title.trim(),
-          description: description.trim(),
-          category:    CATEGORY_TO_DB[category] ?? "other",
-          kit_name:    kit.trim() || null,
+          title:            title.trim(),
+          description:      description.trim(),
+          categories:       categories.map((c) => CATEGORY_TO_DB[c] ?? "other"),
+          kit_name:         kit.trim() || null,
+          allow_sns_repost: allowSnsRepost,
         })
         .eq("id", postId);
 
@@ -396,23 +399,31 @@ export default function EditPostForm({ post }: { post: Post }) {
 
             <Field label={t("fields.category")} required>
               <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCategory(cat)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all"
-                    style={{
-                      background: category === cat ? "var(--accent-primary)" : "var(--bg-secondary)",
-                      color:      category === cat ? "var(--bg-primary)"     : "var(--text-secondary)",
-                      border:     `1px solid ${category === cat ? "var(--accent-primary)" : "var(--border-subtle)"}`,
-                    }}
-                  >
-                    <span>{CATEGORY_META[cat].icon}</span>
-                    {tc(`names.${cat.replace(/\s+/g, "_")}`)}
-                  </button>
-                ))}
+                {CATEGORIES.map((cat) => {
+                  const checked = categories.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() =>
+                        setCategories((prev) =>
+                          prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+                        )
+                      }
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium transition-all"
+                      style={{
+                        background: checked ? "var(--accent-primary)" : "var(--bg-secondary)",
+                        color:      checked ? "var(--bg-primary)"     : "var(--text-secondary)",
+                        border:     `1px solid ${checked ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                      }}
+                    >
+                      <span>{CATEGORY_META[cat].icon}</span>
+                      {tc(`names.${cat.replace(/\s+/g, "_")}`)}
+                    </button>
+                  );
+                })}
               </div>
+              {errors.categories && <FieldError msg={errors.categories} />}
             </Field>
 
             <Field label={t("fields.kit")}>
@@ -456,6 +467,20 @@ export default function EditPostForm({ post }: { post: Post }) {
               <AlertCircle size={14} /> {deleteError}
             </p>
           )}
+
+          {/* ── SNS repost permission ────────────────────────────────────── */}
+          <label
+            className="flex items-center gap-3 cursor-pointer select-none"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <input
+              type="checkbox"
+              checked={allowSnsRepost}
+              onChange={(e) => setAllowSnsRepost(e.target.checked)}
+              className="w-4 h-4 rounded accent-[var(--accent-primary)] cursor-pointer"
+            />
+            <span className="text-sm">{t("allowSnsRepost")}</span>
+          </label>
 
           {/* ── Bottom action bar ────────────────────────────────────────── */}
           <div

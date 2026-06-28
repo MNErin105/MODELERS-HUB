@@ -40,9 +40,10 @@ type RawPost = {
   id: string;
   title: string;
   description: string | null;
-  category: string;
+  categories: string[] | null;
   kit_name: string | null;
   created_at: string;
+  allow_sns_repost: boolean | null;
   profiles: RawProfile | null;
   post_images: RawImage[];
   post_tags: RawTag[];
@@ -90,7 +91,7 @@ function rawToPost(raw: RawPost): Post {
     images,
     author,
     tags,
-    category:        DB_TO_CATEGORY[raw.category] ?? "Other",
+    categories:      (raw.categories ?? []).map((c) => DB_TO_CATEGORY[c] ?? "Other"),
     kit:             raw.kit_name ?? "",
     paints:          (raw.post_paints     ?? []).map((p) => p.paint_name),
     tools:           (raw.post_tools      ?? []).map((t) => t.tool_name),
@@ -99,13 +100,14 @@ function rawToPost(raw: RawPost): Post {
     likeCount:       raw.likes.length,
     weeklyLikeCount: raw.likes.filter((l) => l.created_at >= weekAgo).length,
     createdAt:       raw.created_at,
+    allowSnsRepost:  raw.allow_sns_repost ?? true,
   };
 }
 
 // ── Select fragment ───────────────────────────────────────────────────────────
 
 const POST_SELECT = [
-  "id", "title", "description", "category", "kit_name", "created_at",
+  "id", "title", "description", "categories", "kit_name", "created_at", "allow_sns_repost",
   "profiles!user_id (id, username, display_name, avatar_url, country, bio)",
   "post_images (image_url, caption, author_comment, sort_order)",
   "post_tags (tags (name))",
@@ -226,7 +228,7 @@ export type QuickPost = {
   id: string;
   title: string;
   kit: string;
-  category: Category;
+  categories: Category[];
   thumbnailUrl: string;
 };
 
@@ -254,7 +256,7 @@ export async function searchPostsQuick(query: string, limit = 3): Promise<QuickP
   const q = escapeIlike(query.trim());
   const { data } = await supabase
     .from("posts")
-    .select("id, title, kit_name, category, post_images(image_url, sort_order)")
+    .select("id, title, kit_name, categories, post_images(image_url, sort_order)")
     .or(`title.ilike.%${q}%,kit_name.ilike.%${q}%`)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -265,7 +267,7 @@ export async function searchPostsQuick(query: string, limit = 3): Promise<QuickP
       id:           p.id as string,
       title:        p.title as string,
       kit:          (p.kit_name as string | null) ?? "",
-      category:     DB_TO_CATEGORY[p.category as string] ?? "Other",
+      categories:   ((p.categories as string[] | null) ?? []).map((c) => DB_TO_CATEGORY[c] ?? "Other"),
       thumbnailUrl: imgs[0]?.image_url ?? "",
     };
   });

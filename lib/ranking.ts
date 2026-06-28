@@ -47,7 +47,7 @@ export function getRankedPosts(posts: Post[], config: RankingConfig): Post[] {
 
   const scope = config.scope;
   if (scope.type === "category") {
-    filtered = posts.filter((p) => p.category === scope.category);
+    filtered = posts.filter((p) => p.categories.includes(scope.category));
   } else if (scope.type === "country") {
     filtered = posts.filter((p) => p.author.country === scope.country);
   } else {

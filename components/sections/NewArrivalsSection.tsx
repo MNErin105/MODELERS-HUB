@@ -18,7 +18,7 @@ export default function NewArrivalsSection({ posts, categories, onReorderClick }
 
   const sorted = useMemo(() => {
     let result = [...posts];
-    if (activeCategory) result = result.filter((p) => p.category === activeCategory);
+    if (activeCategory) result = result.filter((p) => p.categories.includes(activeCategory!));
     return result.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );

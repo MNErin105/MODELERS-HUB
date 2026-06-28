@@ -89,7 +89,7 @@ export default function AllCategoryRankings({ posts }: Props) {
       <div className="overflow-x-auto pb-1 mb-8 -mx-6 px-6">
         <div className="flex gap-2 min-w-max">
           {CATEGORIES.map((cat) => {
-            const count = posts.filter((p) => p.category === cat).length;
+            const count = posts.filter((p) => p.categories.includes(cat)).length;
             const isActive = cat === activeCategory;
             return (
               <button

@@ -73,7 +73,7 @@ function PostItem({ post, onClick }: { post: QuickPost; onClick: () => void }) {
         className="text-xs shrink-0 px-1.5 py-0.5 rounded"
         style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
       >
-        {post.category}
+        {post.categories[0] ?? ""}
       </span>
     </Link>
   );

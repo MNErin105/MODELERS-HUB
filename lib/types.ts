@@ -137,7 +137,7 @@ export type Post = {
   buildSteps?: BuildStep[];
   author: Author;
   tags: string[];
-  category: Category;
+  categories: Category[];
   kit: string;
   paints: string[];
   tools: string[];
@@ -146,6 +146,7 @@ export type Post = {
   likeCount: number;
   weeklyLikeCount: number;
   createdAt: string;
+  allowSnsRepost: boolean;
 };
 
 export type Tag = {
