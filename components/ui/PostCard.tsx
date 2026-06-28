@@ -31,10 +31,12 @@ function cardAspect(categories: Category[]): "4/5" | "1/1" {
 
 type Props = {
   post: Post;
-  badge?: PostBadge;  // rank / featured badge (optional)
+  badge?: PostBadge;
+  isPinned?: boolean;
+  onTogglePin?: (e: React.MouseEvent) => void;
 };
 
-export default function PostCard({ post, badge }: Props) {
+export default function PostCard({ post, badge, isPinned, onTogglePin }: Props) {
   const { savedIds, likedIds, toggleSave, toggleLike } = useApp();
   const saved = savedIds.has(post.id);
   const liked = likedIds.has(post.id);
@@ -144,6 +146,16 @@ export default function PostCard({ post, badge }: Props) {
               <Heart size={12} fill={liked ? "currentColor" : "none"} strokeWidth={2} />
               <span>{post.likeCount + (liked ? 1 : 0)}</span>
             </button>
+            {onTogglePin && (
+              <button
+                onClick={onTogglePin}
+                aria-label={isPinned ? "ピン留め解除" : "ピン留め"}
+                className="flex items-center text-xs"
+                style={{ color: isPinned ? "var(--accent-primary)" : "rgba(240,240,244,0.75)", transition: "color 0.15s ease", fontSize: 13, lineHeight: 1 }}
+              >
+                {isPinned ? "📌" : "📍"}
+              </button>
+            )}
           </div>
         </div>
       </Link>

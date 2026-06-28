@@ -24,12 +24,16 @@ type Props = {
   allPosts?: Post[];
   onSignOut?: () => void;
   onUpdateAvatar?: (file: File) => Promise<void>;
+  pinnedPostIds?: string[];
+  onTogglePin?: (postId: string) => void;
+  pinError?: string | null;
 };
 
 export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
   isOwnProfile = false, username, allPosts = [],
   onSignOut, onUpdateAvatar,
+  pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
   const t = useTranslations("profile");
   const { likedIds, savedIds } = useApp();
@@ -41,7 +45,10 @@ export default function ProfilePageClient({
 
   const wipPosts      = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
   const likedPosts    = isOwnProfile ? allPosts.filter((p) => likedIds.has(p.id))  : [];
-  const savedPosts = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id)) : [];
+  const savedPosts    = isOwnProfile ? allPosts.filter((p) => savedIds.has(p.id)) : [];
+  const pinnedSet     = new Set(pinnedPostIds);
+  const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
+  const unpinnedPosts = authorPosts.filter((p) => !pinnedSet.has(p.id));
 
   const tabPosts: Record<Tab, Post[]> = {
     works: authorPosts,
@@ -242,7 +249,43 @@ export default function ProfilePageClient({
         </div>
 
         {/* Tab content */}
-        <WorkGrid posts={tabPosts[activeTab]} />
+        {activeTab === "works" && isOwnProfile ? (
+          <>
+            {pinError && (
+              <div
+                className="mb-4 px-4 py-3 rounded-lg text-sm"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
+              >
+                {pinError}
+              </div>
+            )}
+            {pinnedPosts.length > 0 && (
+              <>
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest mb-4"
+                  style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+                >
+                  📌 ピン留め
+                </p>
+                <WorkGrid
+                  posts={pinnedPosts}
+                  pinnedIds={pinnedSet}
+                  onTogglePin={onTogglePin}
+                />
+                {unpinnedPosts.length > 0 && (
+                  <div className="mt-6 mb-6" style={{ borderTop: "1px solid var(--border-subtle)" }} />
+                )}
+              </>
+            )}
+            <WorkGrid
+              posts={unpinnedPosts}
+              pinnedIds={pinnedSet}
+              onTogglePin={onTogglePin}
+            />
+          </>
+        ) : (
+          <WorkGrid posts={tabPosts[activeTab]} />
+        )}
       </div>
 
       {editOpen && (
