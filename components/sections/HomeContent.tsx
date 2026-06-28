@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users, Loader2 } from "lucide-react";
+import { Users } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { Category, Post, Story } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
-import { getPostsForHome } from "@/lib/supabase/queries";
 import { useCategoryOrder } from "@/lib/hooks/useCategoryOrder";
 import PopularSection from "./PopularSection";
 import NewArrivalsSection from "./NewArrivalsSection";
@@ -58,13 +57,14 @@ function PeopleCard({ user }: { user: UserProfile }) {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-export default function HomeContent() {
+type Props = { initialPosts: Post[] };
+
+export default function HomeContent({ initialPosts }: Props) {
   const searchParams = useSearchParams();
   const query = searchParams.get("q") ?? "";
 
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [posts] = useState<Post[]>(initialPosts);
   const { user } = useAuth();
 
   // Category order (persisted to localStorage)
@@ -76,13 +76,6 @@ export default function HomeContent() {
   const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
   const [viewerStart, setViewerStart] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    getPostsForHome(200).then((data) => {
-      setPosts(data);
-      setLoading(false);
-    });
-  }, []);
 
   const selfProfile = useMemo<UserProfile | null>(() => {
     if (!user) return null;
@@ -139,11 +132,7 @@ export default function HomeContent() {
         />
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-32">
-          <Loader2 size={32} className="animate-spin" style={{ color: "var(--text-muted)" }} />
-        </div>
-      ) : isFiltered ? (
+      {isFiltered ? (
         <section className="w-full py-10 px-6 max-w-[1440px] mx-auto">
           {matchingUsers.length > 0 && (
             <div className="mb-10">
