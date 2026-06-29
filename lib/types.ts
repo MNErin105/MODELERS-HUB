@@ -10,8 +10,7 @@ export type Category =
   | "Other";
 
 export const CATEGORIES: Category[] = [
-  "Gunpla", "Military", "Car", "Character Model", "Diorama",
-  "Aircraft", "Figure", "Other",
+  "Gunpla", "Aircraft", "Military", "Car", "Diorama", "Character Model", "Figure", "Other",
 ];
 
 export function categorySlug(c: Category): string {
