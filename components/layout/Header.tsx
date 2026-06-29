@@ -341,6 +341,11 @@ function HeaderInner() {
             </>
           )}
 
+          {/* Locale toggle — mobile only, always visible */}
+          <div className="flex md:hidden">
+            <LocaleToggle />
+          </div>
+
           {/* Mobile hamburger */}
           <button
             onClick={() => setMenuOpen((v) => !v)}
