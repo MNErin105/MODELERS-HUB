@@ -1,30 +1,49 @@
 import { supabase } from "@/lib/supabase";
 
 export async function getFeaturedData(userId: string): Promise<{ postId: string | null; imageUrl: string | null }> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("featured_post_id, featured_image_url")
-    .eq("id", userId)
-    .single();
+  // NOTE: Supabase queries can hang indefinitely. Always wrap with Promise.race +
+  // timeout and catch — same pattern as AuthContext / DynamicProfilePage.
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error("getFeaturedData timeout")), 5000)
+  );
+  try {
+    const { data, error } = await Promise.race([
+      supabase
+        .from("profiles")
+        .select("featured_post_id, featured_image_url")
+        .eq("id", userId)
+        .single(),
+      timeout,
+    ]);
 
-  if (!error) {
+    if (!error) {
+      return {
+        postId:   (data?.featured_post_id   as string | null) ?? null,
+        imageUrl: (data?.featured_image_url as string | null) ?? null,
+      };
+    }
+
+    // featured_image_url 列がまだ DB に存在しない場合は combined SELECT がエラーになる。
+    // その場合は featured_post_id だけを取得してフォールバック。
+    const fallbackTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("getFeaturedData fallback timeout")), 5000)
+    );
+    const { data: fallback } = await Promise.race([
+      supabase
+        .from("profiles")
+        .select("featured_post_id")
+        .eq("id", userId)
+        .single(),
+      fallbackTimeout,
+    ]);
     return {
-      postId:   (data?.featured_post_id   as string | null) ?? null,
-      imageUrl: (data?.featured_image_url as string | null) ?? null,
+      postId:   (fallback?.featured_post_id as string | null) ?? null,
+      imageUrl: null,
     };
+  } catch (err) {
+    console.error("[getFeaturedData] query failed or timed out:", err);
+    return { postId: null, imageUrl: null };
   }
-
-  // featured_image_url 列がまだ DB に存在しない場合は combined SELECT がエラーになる。
-  // その場合は featured_post_id だけを取得してフォールバック。
-  const { data: fallback } = await supabase
-    .from("profiles")
-    .select("featured_post_id")
-    .eq("id", userId)
-    .single();
-  return {
-    postId:   (fallback?.featured_post_id as string | null) ?? null,
-    imageUrl: null,
-  };
 }
 
 export async function setFeaturedPost(userId: string, postId: string): Promise<void> {

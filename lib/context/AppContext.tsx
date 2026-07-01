@@ -38,14 +38,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       const uid = session.user.id;
       setCurrentUserId(uid);
-      const [{ data: likedData }, { data: savedData }, { data: followedData }] = await Promise.all([
-        supabase.from("likes").select("post_id").eq("user_id", uid),
-        supabase.from("bookmarks").select("post_id").eq("user_id", uid),
-        supabase.from("follows").select("following_id").eq("follower_id", uid),
-      ]);
-      setLikedIds(new Set((likedData ?? []).map((l) => l.post_id as string)));
-      setSavedIds(new Set((savedData ?? []).map((b) => b.post_id as string)));
-      setFollowedIds(new Set((followedData ?? []).map((f) => f.following_id as string)));
+      // NOTE: Supabase queries can hang indefinitely. Always use Promise.race +
+      // timeout and finally/catch to release state — same pattern as AuthContext.
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("AppContext fetch timeout")), 5000)
+      );
+      try {
+        const [{ data: likedData }, { data: savedData }, { data: followedData }] =
+          await Promise.race([
+            Promise.all([
+              supabase.from("likes").select("post_id").eq("user_id", uid),
+              supabase.from("bookmarks").select("post_id").eq("user_id", uid),
+              supabase.from("follows").select("following_id").eq("follower_id", uid),
+            ]),
+            timeout,
+          ]);
+        setLikedIds(new Set((likedData ?? []).map((l) => l.post_id as string)));
+        setSavedIds(new Set((savedData ?? []).map((b) => b.post_id as string)));
+        setFollowedIds(new Set((followedData ?? []).map((f) => f.following_id as string)));
+      } catch (err) {
+        console.error("[AppContext] likes/bookmarks/follows fetch failed or timed out:", err);
+        setLikedIds(new Set());
+        setSavedIds(new Set());
+        setFollowedIds(new Set());
+      }
     });
 
     return () => subscription.unsubscribe();
