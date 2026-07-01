@@ -26,7 +26,7 @@ type Props = {
   savedPosts?: Post[];
   featuredThumbnailUrl?: string;
   featuredPostId?: string;
-  onSetFeatured?: (postId: string) => void;
+  onFeaturedChange?: (postId: string | null) => void;
   onSignOut?: () => void;
   onUpdateAvatar?: (file: File) => Promise<void>;
   pinnedPostIds?: string[];
@@ -38,7 +38,7 @@ export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
   isOwnProfile = false, username,
   likedPosts = [], savedPosts = [],
-  featuredThumbnailUrl, featuredPostId, onSetFeatured,
+  featuredThumbnailUrl, featuredPostId, onFeaturedChange,
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
@@ -291,8 +291,6 @@ export default function ProfilePageClient({
                   posts={pinnedPosts}
                   pinnedIds={pinnedSet}
                   onTogglePin={onTogglePin}
-                  featuredId={featuredPostId}
-                  onSetFeatured={onSetFeatured}
                 />
                 {unpinnedPosts.length > 0 && (
                   <div className="mt-6 mb-6" style={{ borderTop: "1px solid var(--border-subtle)" }} />
@@ -303,8 +301,6 @@ export default function ProfilePageClient({
               posts={unpinnedPosts}
               pinnedIds={pinnedSet}
               onTogglePin={onTogglePin}
-              featuredId={featuredPostId}
-              onSetFeatured={onSetFeatured}
             />
           </>
         ) : (
@@ -317,6 +313,9 @@ export default function ProfilePageClient({
           initialName={author.name}
           initialBio={author.bio}
           initialUsername={username ?? ""}
+          authorPosts={authorPosts}
+          featuredPostId={featuredPostId}
+          onFeaturedChange={onFeaturedChange}
           onClose={() => setEditOpen(false)}
         />
       )}

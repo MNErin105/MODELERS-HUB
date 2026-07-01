@@ -10,11 +10,9 @@ type Props = {
   emptyMessage?: string;
   pinnedIds?: Set<string>;
   onTogglePin?: (postId: string) => void;
-  featuredId?: string;
-  onSetFeatured?: (postId: string) => void;
 };
 
-export default function WorkGrid({ posts, badgeMap, emptyMessage, pinnedIds, onTogglePin, featuredId, onSetFeatured }: Props) {
+export default function WorkGrid({ posts, badgeMap, emptyMessage, pinnedIds, onTogglePin }: Props) {
   const t = useTranslations("workGrid");
   const empty = emptyMessage ?? t("empty");
 
@@ -35,8 +33,7 @@ export default function WorkGrid({ posts, badgeMap, emptyMessage, pinnedIds, onT
             badge={badgeMap?.[post.id]}
             isPinned={pinnedIds?.has(post.id)}
             onTogglePin={onTogglePin ? (e) => { e.preventDefault(); e.stopPropagation(); onTogglePin(post.id); } : undefined}
-            isFeatured={featuredId === post.id}
-            onSetFeatured={onSetFeatured ? (e) => { e.preventDefault(); e.stopPropagation(); onSetFeatured(post.id); } : undefined}
+
           />
         </div>
       ))}

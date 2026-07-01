@@ -34,11 +34,9 @@ type Props = {
   badge?: PostBadge;
   isPinned?: boolean;
   onTogglePin?: (e: React.MouseEvent) => void;
-  isFeatured?: boolean;
-  onSetFeatured?: (e: React.MouseEvent) => void;
 };
 
-export default function PostCard({ post, badge, isPinned, onTogglePin, isFeatured, onSetFeatured }: Props) {
+export default function PostCard({ post, badge, isPinned, onTogglePin }: Props) {
   const { savedIds, likedIds, toggleSave, toggleLike } = useApp();
   const saved = savedIds.has(post.id);
   const liked = likedIds.has(post.id);
@@ -156,16 +154,6 @@ export default function PostCard({ post, badge, isPinned, onTogglePin, isFeature
                 style={{ color: isPinned ? "var(--accent-primary)" : "rgba(240,240,244,0.75)", transition: "color 0.15s ease", fontSize: 13, lineHeight: 1 }}
               >
                 {isPinned ? "📌" : "📍"}
-              </button>
-            )}
-            {onSetFeatured && (
-              <button
-                onClick={onSetFeatured}
-                aria-label={isFeatured ? "看板作品を解除" : "看板作品に設定"}
-                className="flex items-center text-xs"
-                style={{ color: isFeatured ? "#fbbf24" : "rgba(240,240,244,0.75)", transition: "color 0.15s ease", fontSize: 13, lineHeight: 1 }}
-              >
-                ★
               </button>
             )}
           </div>

@@ -1,39 +1,49 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { X, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
+import { setFeaturedPost, clearFeaturedPost } from "@/lib/featured";
+import type { Post } from "@/lib/types";
 
 // 3–20 chars, lowercase a–z / 0–9 / underscore only
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
 function validateUsername(val: string): string | null {
-  if (!val)           return "Username is required.";
-  if (val.length < 3) return "At least 3 characters required.";
+  if (!val)            return "Username is required.";
+  if (val.length < 3)  return "At least 3 characters required.";
   if (val.length > 20) return "20 characters maximum.";
   if (!USERNAME_RE.test(val)) return "Lowercase letters, numbers, and _ only.";
   return null;
 }
 
 type Props = {
-  initialName:     string;
-  initialBio:      string;
-  initialUsername: string;
-  onClose:         () => void;
+  initialName:       string;
+  initialBio:        string;
+  initialUsername:   string;
+  authorPosts:       Post[];
+  featuredPostId?:   string;
+  onFeaturedChange?: (postId: string | null) => void;
+  onClose:           () => void;
 };
 
-export default function ProfileEditModal({ initialName, initialBio, initialUsername, onClose }: Props) {
-  const { updateProfile } = useAuth();
+export default function ProfileEditModal({
+  initialName, initialBio, initialUsername,
+  authorPosts, featuredPostId, onFeaturedChange,
+  onClose,
+}: Props) {
+  const { updateProfile, user } = useAuth();
 
-  const [name,          setName]          = useState(initialName);
-  const [bio,           setBio]           = useState(initialBio);
-  const [username,      setUsername]      = useState(initialUsername);
-  const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [saving,        setSaving]        = useState(false);
-  const [error,         setError]         = useState<string | null>(null);
+  const [name,               setName]               = useState(initialName);
+  const [bio,                setBio]                = useState(initialBio);
+  const [username,           setUsername]           = useState(initialUsername);
+  const [usernameError,      setUsernameError]      = useState<string | null>(null);
+  const [selectedFeaturedId, setSelectedFeaturedId] = useState<string | null>(featuredPostId ?? null);
+  const [saving,             setSaving]             = useState(false);
+  const [error,              setError]              = useState<string | null>(null);
 
   function handleUsernameChange(raw: string) {
-    // Normalize on the way in: lowercase + strip disallowed chars
     const normalized = raw.toLowerCase().replace(/[^a-z0-9_]/g, "");
     setUsername(normalized);
     setUsernameError(validateUsername(normalized));
@@ -49,6 +59,14 @@ export default function ProfileEditModal({ initialName, initialBio, initialUsern
     setError(null);
     try {
       await updateProfile({ name: name.trim(), bio: bio.trim(), username });
+      if (user && selectedFeaturedId !== (featuredPostId ?? null)) {
+        if (selectedFeaturedId) {
+          await setFeaturedPost(user.id, selectedFeaturedId);
+        } else {
+          await clearFeaturedPost(user.id);
+        }
+        onFeaturedChange?.(selectedFeaturedId);
+      }
       onClose();
     } catch (err) {
       console.error("[ProfileEditModal] save error:", err);
@@ -67,7 +85,7 @@ export default function ProfileEditModal({ initialName, initialBio, initialUsern
       onClick={(e) => { if (e.target === e.currentTarget && !saving) onClose(); }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl p-8 flex flex-col gap-6"
+        className="relative w-full max-w-md rounded-2xl p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto"
         style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
       >
         <button
@@ -180,6 +198,77 @@ export default function ProfileEditModal({ initialName, initialBio, initialUsern
               {bio.length} / 200
             </p>
           </div>
+
+          {/* ── 看板作品 ──────────────────────────────────────────── */}
+          {authorPosts.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+                >
+                  看板作品
+                </label>
+                {selectedFeaturedId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFeaturedId(null)}
+                    disabled={saving}
+                    className="text-xs hover:opacity-70 transition-opacity"
+                    style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+                  >
+                    選択解除
+                  </button>
+                )}
+              </div>
+              <div
+                className="flex gap-2 overflow-x-auto pb-1"
+                style={{ scrollbarWidth: "thin" }}
+              >
+                {authorPosts.map((post) => {
+                  const isSelected = selectedFeaturedId === post.id;
+                  return (
+                    <button
+                      key={post.id}
+                      type="button"
+                      disabled={saving}
+                      onClick={() => setSelectedFeaturedId(isSelected ? null : post.id)}
+                      className="relative shrink-0 rounded-lg overflow-hidden transition-all hover:opacity-90 disabled:cursor-not-allowed"
+                      style={{
+                        width:  64,
+                        height: 64,
+                        border: `2px solid ${isSelected ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                        outline: "none",
+                        transition: "border-color 0.15s ease",
+                      }}
+                      title={post.title}
+                    >
+                      <Image
+                        src={post.thumbnailUrl}
+                        alt={post.title}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                      {isSelected && (
+                        <div
+                          className="absolute inset-0 flex items-center justify-center"
+                          style={{ background: "rgba(0,0,0,0.4)" }}
+                        >
+                          <span style={{ color: "var(--accent-primary)", fontSize: 18, lineHeight: 1 }}>★</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {selectedFeaturedId
+                  ? authorPosts.find((p) => p.id === selectedFeaturedId)?.title ?? ""
+                  : "タップして看板作品を選択"}
+              </p>
+            </div>
+          )}
 
           {error && (
             <p className="text-sm" style={{ color: "#f87171" }}>{error}</p>
