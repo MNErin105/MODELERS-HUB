@@ -8,6 +8,7 @@ import { setFeaturedPost, clearFeaturedPost, uploadFeaturedImage, clearFeaturedI
 import { prepareFile } from "@/lib/imageUtils";
 import type { StoredFile } from "@/lib/imageUtils";
 import type { Post } from "@/lib/types";
+import FeaturedImageCropModal from "./FeaturedImageCropModal";
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 
@@ -56,16 +57,25 @@ export default function ProfileEditModal({
   );
   const [pendingStoredFile,   setPendingStoredFile]   = useState<StoredFile | null>(null);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
+  const [cropSrc,             setCropSrc]             = useState<string | null>(null);
 
   const imageInputRef  = useRef<HTMLInputElement>(null);
   const pendingUrlRef  = useRef<string | null>(null);
+  const cropSrcRef     = useRef<string | null>(null);
 
   useEffect(() => {
     pendingUrlRef.current = pendingImagePreview;
   }, [pendingImagePreview]);
 
   useEffect(() => {
-    return () => { if (pendingUrlRef.current) URL.revokeObjectURL(pendingUrlRef.current); };
+    cropSrcRef.current = cropSrc;
+  }, [cropSrc]);
+
+  useEffect(() => {
+    return () => {
+      if (pendingUrlRef.current) URL.revokeObjectURL(pendingUrlRef.current);
+      if (cropSrcRef.current) URL.revokeObjectURL(cropSrcRef.current);
+    };
   }, []);
 
   const activeImageUrl: string | null =
@@ -82,12 +92,25 @@ export default function ProfileEditModal({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
-    const { previewUrl, stored } = await prepareFile(file);
+    const { previewUrl } = await prepareFile(file);
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(previewUrl);
+  }
+
+  async function handleCropApply(croppedFile: File) {
+    const { previewUrl, stored } = await prepareFile(croppedFile);
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
     if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
     setPendingStoredFile(stored);
     setPendingImagePreview(previewUrl);
     setBgMode("image");
     setSelectedFeaturedId(null);
+  }
+
+  function handleCropCancel() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   }
 
   function handlePostSelect(postId: string) {
@@ -175,6 +198,7 @@ export default function ProfileEditModal({
   const canSave = !!name.trim() && !validateUsername(username);
 
   return (
+    <>
     <div
       className="fixed inset-0 z-[300] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.75)" }}
@@ -446,5 +470,13 @@ export default function ProfileEditModal({
         </form>
       </div>
     </div>
+    {cropSrc && (
+      <FeaturedImageCropModal
+        imageSrc={cropSrc}
+        onApply={handleCropApply}
+        onCancel={handleCropCancel}
+      />
+    )}
+    </>
   );
 }

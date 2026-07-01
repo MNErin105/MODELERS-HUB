@@ -115,27 +115,32 @@ export default function ProfilePageClient({
 
         {/* Profile header card */}
         <div
-          className="rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 relative overflow-hidden"
+          className="rounded-2xl mb-8 overflow-hidden flex flex-col md:flex-row"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
-          {featuredThumbnailUrl && (
-            <>
-              <Image
-                src={featuredThumbnailUrl}
-                alt=""
-                fill
-                className="object-cover"
-                style={{ opacity: 0.22 }}
-                sizes="(max-width: 768px) 100vw, 1440px"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
-              />
-            </>
-          )}
-          {/* Avatar */}
-          <div className="relative shrink-0 z-[1]">
+          {/* Left: profile info */}
+          <div className="relative flex-1 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            {/* Mobile: background image (hidden on md+) */}
+            {featuredThumbnailUrl && (
+              <>
+                <div className="absolute inset-0 md:hidden">
+                  <Image
+                    src={featuredThumbnailUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    style={{ opacity: 0.22 }}
+                    sizes="100vw"
+                  />
+                </div>
+                <div
+                  className="absolute inset-0 md:hidden"
+                  style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
+                />
+              </>
+            )}
+            {/* Avatar */}
+            <div className="relative shrink-0 z-[1]">
             <div
               className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden"
               style={{ border: "3px solid var(--accent-muted)" }}
@@ -235,6 +240,19 @@ export default function ProfilePageClient({
               </div>
             )}
           </div>
+          </div>
+          {/* Right: featured image (desktop only, 3:2) */}
+          {featuredThumbnailUrl && (
+            <div className="hidden md:block relative shrink-0" style={{ width: 280 }}>
+              <Image
+                src={featuredThumbnailUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="280px"
+              />
+            </div>
+          )}
         </div>
 
         {/* Tab bar */}
