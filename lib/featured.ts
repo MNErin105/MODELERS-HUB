@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
-export async function getFeaturedData(userId: string): Promise<{ postId: string | null; imageUrl: string | null }> {
+export async function getFeaturedData(userId: string): Promise<{ postId: string | null; imageUrl: string | null } | null> {
   // NOTE: Supabase queries can hang indefinitely. Always wrap with Promise.race +
   // timeout and catch — same pattern as AuthContext / DynamicProfilePage.
   const timeout = new Promise<never>((_, reject) =>
@@ -42,7 +42,7 @@ export async function getFeaturedData(userId: string): Promise<{ postId: string 
     };
   } catch (err) {
     console.error("[getFeaturedData] query failed or timed out:", err);
-    return { postId: null, imageUrl: null };
+    return null; // null = failure (caller must not overwrite existing state)
   }
 }
 

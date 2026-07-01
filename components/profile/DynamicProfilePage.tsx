@@ -70,15 +70,35 @@ export default function DynamicProfilePage() {
     fetchData();
   }, [user?.id]);
 
-  // Featured data — non-blocking, separate effect
+  // Featured data — non-blocking, separate effect.
+  // getFeaturedData returns null on timeout/error; keep existing state and retry once.
   useEffect(() => {
     if (!user) return;
-    getFeaturedData(user.id)
-      .then(({ postId, imageUrl }) => {
-        setFeaturedPostId(postId);
-        setFeaturedImageUrl(imageUrl);
-      })
-      .catch(() => {});
+    let cancelled = false;
+    let retried = false;
+
+    const fetchFeatured = async () => {
+      try {
+        const result = await getFeaturedData(user.id);
+        if (cancelled) return;
+        if (result === null) {
+          console.error("[DynamicProfilePage] getFeaturedData returned null (timeout or error); will retry in 3s");
+          if (!retried) {
+            retried = true;
+            setTimeout(() => { if (!cancelled) fetchFeatured(); }, 3000);
+          }
+          return;
+        }
+        setFeaturedPostId(result.postId);
+        setFeaturedImageUrl(result.imageUrl);
+      } catch (err) {
+        if (cancelled) return;
+        console.error("[DynamicProfilePage] getFeaturedData threw unexpectedly:", err);
+      }
+    };
+
+    fetchFeatured();
+    return () => { cancelled = true; };
   }, [user?.id]);
 
   if (loading || !user || postsLoading) {
