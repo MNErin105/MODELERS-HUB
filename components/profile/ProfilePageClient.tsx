@@ -120,8 +120,15 @@ export default function ProfilePageClient({
         >
           {featuredThumbnailUrl && (
             <>
-              {/* Desktop: right-side image */}
-              <div className="hidden md:block absolute inset-y-0 right-0 z-0" style={{ width: "65%" }}>
+              {/* Desktop: right-side image — mask fades left edge so it blends with the overlay */}
+              <div
+                className="hidden md:block absolute inset-y-0 right-0 z-0"
+                style={{
+                  width: "65%",
+                  WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 25%, black 100%)",
+                  maskImage:       "linear-gradient(to right, transparent 0%, black 25%, black 100%)",
+                }}
+              >
                 <Image
                   src={featuredThumbnailUrl}
                   alt=""
@@ -130,10 +137,10 @@ export default function ProfilePageClient({
                   sizes="65vw"
                 />
               </div>
-              {/* Desktop: gradient overlay — gradual fade matching --bg-secondary (#111114) */}
+              {/* Desktop: gradient overlay — never fully transparent so bright images don't bleed */}
               <div
                 className="hidden md:block absolute inset-0 z-[1]"
-                style={{ background: "linear-gradient(to right, var(--bg-secondary) 0%, var(--bg-secondary) 20%, rgba(17,17,20,0.75) 40%, rgba(17,17,20,0.35) 60%, transparent 85%)" }}
+                style={{ background: "linear-gradient(to right, var(--bg-secondary) 0%, var(--bg-secondary) 15%, rgba(17,17,20,0.7) 35%, rgba(17,17,20,0.3) 55%, rgba(17,17,20,0.08) 75%, transparent 95%)" }}
               />
               {/* Mobile: full-width background */}
               <div className="absolute inset-0 md:hidden z-0">
