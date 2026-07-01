@@ -53,11 +53,17 @@ export async function uploadFeaturedImage(
     .upload(path, buffer, { contentType, upsert: true });
   if (error) throw new Error(error.message);
   const { data } = supabase.storage.from("featured-images").getPublicUrl(path);
-  const url = `${data.publicUrl}?t=${Date.now()}`;
-  await supabase
+  const url = data.publicUrl;
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  console.log("[uploadFeaturedImage] auth user:", authData?.user?.id, authError);
+
+  const { error: updateError } = await supabase
     .from("profiles")
     .update({ featured_image_url: url, featured_post_id: null })
     .eq("id", userId);
+  if (updateError) console.error("[uploadFeaturedImage] profiles update error:", updateError);
+
   return url;
 }
 
