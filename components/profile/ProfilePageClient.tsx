@@ -121,19 +121,19 @@ export default function ProfilePageClient({
           {featuredThumbnailUrl && (
             <>
               {/* Desktop: right-side image */}
-              <div className="hidden md:block absolute inset-y-0 right-0 z-0" style={{ width: "55%" }}>
+              <div className="hidden md:block absolute inset-y-0 right-0 z-0" style={{ width: "65%" }}>
                 <Image
                   src={featuredThumbnailUrl}
                   alt=""
                   fill
                   className="object-cover"
-                  sizes="55vw"
+                  sizes="65vw"
                 />
               </div>
-              {/* Desktop: gradient overlay (solid bg-secondary → semi-transparent → transparent) */}
+              {/* Desktop: gradient overlay — gradual fade matching --bg-secondary (#111114) */}
               <div
                 className="hidden md:block absolute inset-0 z-[1]"
-                style={{ background: "linear-gradient(to right, var(--bg-secondary) 0%, rgba(10,10,10,0.6) 30%, transparent 65%)" }}
+                style={{ background: "linear-gradient(to right, var(--bg-secondary) 0%, var(--bg-secondary) 20%, rgba(17,17,20,0.75) 40%, rgba(17,17,20,0.35) 60%, transparent 85%)" }}
               />
               {/* Mobile: full-width background */}
               <div className="absolute inset-0 md:hidden z-0">
