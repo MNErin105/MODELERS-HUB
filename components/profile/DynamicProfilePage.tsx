@@ -42,18 +42,32 @@ export default function DynamicProfilePage() {
     getPostsByIds(ids).then(setSavedPosts);
   }, [savedIds, user]);
 
+  // NOTE: Supabase queries can hang indefinitely on network issues.
+  // Always wrap Promise.all with Promise.race + timeout, and use finally
+  // to release loading state — otherwise the spinner loops forever.
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      getPostsByUserId(user.id),
-      fetchPinnedPostIds(user.id),
-    ]).then(([owned, pinIds]) => {
-      setOwnPosts(owned);
-      setPinnedPostIds(pinIds);
-      setPostsLoading(false);
-    }).catch(() => {
-      setPostsLoading(false);
-    });
+    const fetchData = async () => {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("posts fetch timeout")), 5000)
+      );
+      try {
+        const [owned, pinIds] = await Promise.race([
+          Promise.all([
+            getPostsByUserId(user.id),
+            fetchPinnedPostIds(user.id),
+          ]),
+          timeout,
+        ]);
+        setOwnPosts(owned);
+        setPinnedPostIds(pinIds);
+      } catch (err) {
+        console.error("[DynamicProfilePage] posts fetch failed or timed out:", err);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+    fetchData();
   }, [user?.id]);
 
   // Featured data — non-blocking, separate effect
