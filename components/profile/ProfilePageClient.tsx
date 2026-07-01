@@ -26,7 +26,9 @@ type Props = {
   savedPosts?: Post[];
   featuredThumbnailUrl?: string;
   featuredPostId?: string;
+  featuredImageUrl?: string;
   onFeaturedChange?: (postId: string | null) => void;
+  onFeaturedImageChange?: (url: string | null) => void;
   onSignOut?: () => void;
   onUpdateAvatar?: (file: File) => Promise<void>;
   pinnedPostIds?: string[];
@@ -38,7 +40,8 @@ export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
   isOwnProfile = false, username,
   likedPosts = [], savedPosts = [],
-  featuredThumbnailUrl, featuredPostId, onFeaturedChange,
+  featuredThumbnailUrl, featuredPostId, featuredImageUrl,
+  onFeaturedChange, onFeaturedImageChange,
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
@@ -315,7 +318,9 @@ export default function ProfilePageClient({
           initialUsername={username ?? ""}
           authorPosts={authorPosts}
           featuredPostId={featuredPostId}
+          featuredImageUrl={featuredImageUrl}
           onFeaturedChange={onFeaturedChange}
+          onFeaturedImageChange={onFeaturedImageChange}
           onClose={() => setEditOpen(false)}
         />
       )}

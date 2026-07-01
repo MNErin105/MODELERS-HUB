@@ -19,12 +19,17 @@ export default async function ProfilePage({ params }: Props) {
 
   if (!profile) return notFound();
 
-  const featuredPostId = profile.featured_post_id as string | null;
-  const featuredThumbnailUrl = featuredPostId
-    ? await getPostsByIds([featuredPostId])
-        .then((posts) => posts[0]?.thumbnailUrl ?? undefined)
-        .catch(() => undefined)
-    : undefined;
+  const featuredPostId     = profile.featured_post_id    as string | null;
+  const rawFeaturedImageUrl = profile.featured_image_url as string | null;
+
+  let featuredThumbnailUrl: string | undefined;
+  if (rawFeaturedImageUrl) {
+    featuredThumbnailUrl = rawFeaturedImageUrl;
+  } else if (featuredPostId) {
+    featuredThumbnailUrl = await getPostsByIds([featuredPostId])
+      .then((posts) => posts[0]?.thumbnailUrl ?? undefined)
+      .catch(() => undefined);
+  }
 
   const author: Author = {
     id:             profile.id as string,

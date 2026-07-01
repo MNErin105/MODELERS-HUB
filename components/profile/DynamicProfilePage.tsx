@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
 import { getPostsByUserId, getPostsByIds } from "@/lib/supabase/queries";
 import { fetchPinnedPostIds, addPin, removePin } from "@/lib/pins";
-import { getFeaturedPostId } from "@/lib/featured";
+import { getFeaturedData } from "@/lib/featured";
 import { useApp } from "@/lib/context/AppContext";
 import ProfilePageClient from "./ProfilePageClient";
 import type { Post } from "@/lib/types";
@@ -15,18 +15,17 @@ export default function DynamicProfilePage() {
   const router = useRouter();
   const { user, loading, signOut, updateAvatar } = useAuth();
   const { likedIds, savedIds } = useApp();
-  const [ownPosts,     setOwnPosts]     = useState<Post[]>([]);
-  const [likedPosts,   setLikedPosts]   = useState<Post[]>([]);
-  const [savedPosts,   setSavedPosts]   = useState<Post[]>([]);
-  const [postsLoading, setPostsLoading] = useState(true);
+  const [ownPosts,      setOwnPosts]      = useState<Post[]>([]);
+  const [likedPosts,    setLikedPosts]    = useState<Post[]>([]);
+  const [savedPosts,    setSavedPosts]    = useState<Post[]>([]);
+  const [postsLoading,  setPostsLoading]  = useState(true);
   const [pinnedPostIds, setPinnedPostIds] = useState<string[]>([]);
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [featuredPostId, setFeaturedPostId] = useState<string | null>(null);
+  const [pinError,      setPinError]      = useState<string | null>(null);
+  const [featuredPostId,   setFeaturedPostId]   = useState<string | null>(null);
+  const [featuredImageUrl, setFeaturedImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.replace("/");
-    }
+    if (!loading && !user) { router.replace("/"); }
   }, [loading, user, router]);
 
   useEffect(() => {
@@ -57,9 +56,15 @@ export default function DynamicProfilePage() {
     });
   }, [user?.id]);
 
+  // Featured data — non-blocking, separate effect
   useEffect(() => {
     if (!user) return;
-    getFeaturedPostId(user.id).then(setFeaturedPostId).catch(() => {});
+    getFeaturedData(user.id)
+      .then(({ postId, imageUrl }) => {
+        setFeaturedPostId(postId);
+        setFeaturedImageUrl(imageUrl);
+      })
+      .catch(() => {});
   }, [user?.id]);
 
   if (loading || !user || postsLoading) {
@@ -93,9 +98,11 @@ export default function DynamicProfilePage() {
   const author     = authUserToAuthor(user);
   const totalLikes = ownPosts.reduce((acc, p) => acc + p.likeCount, 0);
   const totalSaves = ownPosts.reduce((acc, p) => acc + p.saveCount, 0);
-  const featuredThumbnailUrl = featuredPostId
+
+  const postThumbnailUrl = featuredPostId
     ? ownPosts.find((p) => p.id === featuredPostId)?.thumbnailUrl
     : undefined;
+  const effectiveBgUrl = featuredImageUrl ?? postThumbnailUrl;
 
   return (
     <ProfilePageClient
@@ -107,9 +114,11 @@ export default function DynamicProfilePage() {
       username={user.username}
       likedPosts={likedPosts}
       savedPosts={savedPosts}
-      featuredThumbnailUrl={featuredThumbnailUrl}
+      featuredThumbnailUrl={effectiveBgUrl}
       featuredPostId={featuredPostId ?? undefined}
+      featuredImageUrl={featuredImageUrl ?? undefined}
       onFeaturedChange={(id) => setFeaturedPostId(id)}
+      onFeaturedImageChange={(url) => setFeaturedImageUrl(url)}
       onSignOut={signOut}
       onUpdateAvatar={updateAvatar}
       pinnedPostIds={pinnedPostIds}
