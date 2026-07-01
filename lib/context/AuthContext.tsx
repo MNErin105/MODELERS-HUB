@@ -134,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Rely on INITIAL_SESSION for first hydration — avoids a double fetch
     // that would occur if we also called getSession() separately.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("[AUTH EVENT]", event, "session exists:", !!session, "user id:", session?.user?.id);
       try {
         if (!session?.user) { setUser(null); return; }
         if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
