@@ -280,65 +280,62 @@ function HeaderInner() {
         {/* Right controls */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
 
-          {/* Desktop: Post + locale toggle + auth */}
-          {!loading && (
-            <>
-              {/* Post button — desktop */}
-              <Link
-                href="/posts/new"
-                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-                style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-                aria-label={t("newPost")}
+          {/* Post button — desktop, logged-in only */}
+          {!loading && user && (
+            <Link
+              href="/posts/new"
+              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+              aria-label={t("newPost")}
+            >
+              <PlusSquare size={15} />
+              <span>{t("newPost")}</span>
+            </Link>
+          )}
+
+          {/* Locale toggle — desktop, always visible */}
+          <div className="hidden md:flex">
+            <LocaleToggle />
+          </div>
+
+          {/* Notification bell — logged-in only */}
+          {!loading && user && (
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen((v) => !v)}
+                aria-label="Notifications"
+                className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
+                style={{ color: "var(--text-secondary)" }}
               >
-                <PlusSquare size={15} />
-                <span>{t("newPost")}</span>
-              </Link>
-
-              {/* Locale toggle — desktop only */}
-              <div className="hidden md:flex">
-                <LocaleToggle />
-              </div>
-
-              {/* Notification bell */}
-              {user && (
-                <div className="relative">
-                  <button
-                    onClick={() => setNotifOpen((v) => !v)}
-                    aria-label="Notifications"
-                    className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
-                    style={{ color: "var(--text-secondary)" }}
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
+                    style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
                   >
-                    <Bell size={18} />
-                    {unreadCount > 0 && (
-                      <span
-                        className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
-                        style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
-                      >
-                        {unreadCount > 9 ? "9+" : unreadCount}
-                      </span>
-                    )}
-                  </button>
-                  {notifOpen && <NotificationDropdown onClose={closeNotif} />}
-                </div>
-              )}
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && <NotificationDropdown onClose={closeNotif} />}
+            </div>
+          )}
 
-              {/* Auth: logged in → profile icon; logged out → Sign in button (both mobile + desktop) */}
-              {user ? (
-                <ProfileAvatarButton user={user} />
-              ) : (
-                <button
-                  onClick={openLoginModal}
-                  className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                  style={{
-                    background: "var(--bg-tertiary)",
-                    color: "var(--text-primary)",
-                    border: "1px solid var(--border-subtle)",
-                  }}
-                >
-                  {AUTH_LABELS.signIn}
-                </button>
-              )}
-            </>
+          {/* Sign in always visible; avatar once auth resolves */}
+          {!loading && user ? (
+            <ProfileAvatarButton user={user} />
+          ) : (
+            <button
+              onClick={openLoginModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+              style={{
+                background: "var(--bg-tertiary)",
+                color: "var(--text-primary)",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
+              {AUTH_LABELS.signIn}
+            </button>
           )}
 
           {/* Locale toggle — mobile only, always visible */}
