@@ -78,11 +78,15 @@ async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
   const base = buildBaseAuthUser(supabaseUser);
 
   try {
-    const { data: profile } = await supabase
+    const profileQuery = supabase
       .from("profiles")
       .select("display_name, bio, avatar_url, username")
       .eq("id", supabaseUser.id)
       .single();
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("profiles query timeout")), 5000)
+    );
+    const { data: profile } = await Promise.race([profileQuery, timeoutPromise]);
 
     if (!profile) {
       // Trigger may not have fired (user pre-dates the migration).
