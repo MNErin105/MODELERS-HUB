@@ -53,15 +53,15 @@ function getAvatarUrl(userId: string): string {
   return data.publicUrl;
 }
 
-// Build an AuthUser by combining Supabase Auth data with the profiles table.
-// Falls back to OAuth metadata when no profiles row exists yet.
-async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
+// Builds a minimal AuthUser from Supabase Auth data only — no DB call.
+// Used as the fallback when the profiles query fails.
+function buildBaseAuthUser(supabaseUser: User): AuthUser {
   const meta = supabaseUser.user_metadata as Record<string, string>;
   const email = supabaseUser.email ?? "";
   const username =
     email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 17) ||
     "user";
-  const base: AuthUser = {
+  return {
     id:        supabaseUser.id,
     username:  username.length >= 3 ? username : username.padEnd(3, "0"),
     name:      meta.full_name ?? meta.name ?? "Modeler",
@@ -70,26 +70,37 @@ async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
     country:   "",
     bio:       "",
   };
+}
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name, bio, avatar_url, username")
-    .eq("id", supabaseUser.id)
-    .single();
+// Build an AuthUser by combining Supabase Auth data with the profiles table.
+// Falls back to base (Auth-only) user if the DB query fails.
+async function buildAuthUser(supabaseUser: User): Promise<AuthUser> {
+  const base = buildBaseAuthUser(supabaseUser);
 
-  if (!profile) {
-    // Trigger may not have fired (user pre-dates the migration).
-    // Attempt to create the profiles row now so FK constraints pass.
-    await createMissingProfile(supabaseUser.id, base);
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("display_name, bio, avatar_url, username")
+      .eq("id", supabaseUser.id)
+      .single();
+
+    if (!profile) {
+      // Trigger may not have fired (user pre-dates the migration).
+      // Attempt to create the profiles row now so FK constraints pass.
+      await createMissingProfile(supabaseUser.id, base);
+      return base;
+    }
+    return {
+      ...base,
+      username:  profile.username     ?? base.username,
+      name:      profile.display_name ?? base.name,
+      bio:       profile.bio          ?? "",
+      avatarUrl: profile.avatar_url   ?? base.avatarUrl,
+    };
+  } catch (err) {
+    console.error("[buildAuthUser] profiles query failed, returning base user:", err);
     return base;
   }
-  return {
-    ...base,
-    username:  profile.username     ?? base.username,
-    name:      profile.display_name ?? base.name,
-    bio:       profile.bio          ?? "",
-    avatarUrl: profile.avatar_url   ?? base.avatarUrl,
-  };
 }
 
 // Creates a profiles row for users whose handle_new_user trigger didn't fire.
@@ -127,6 +138,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!session?.user) { setUser(null); return; }
         if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
           setUser(await buildAuthUser(session.user));
+        }
+      } catch (err) {
+        console.error("[onAuthStateChange] buildAuthUser failed, using fallback user:", err);
+        if (session?.user) {
+          setUser(buildBaseAuthUser(session.user));
         }
       } finally {
         setLoading(false);
