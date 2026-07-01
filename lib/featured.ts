@@ -1,14 +1,29 @@
 import { supabase } from "@/lib/supabase";
 
 export async function getFeaturedData(userId: string): Promise<{ postId: string | null; imageUrl: string | null }> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("featured_post_id, featured_image_url")
     .eq("id", userId)
     .single();
+
+  if (!error) {
+    return {
+      postId:   (data?.featured_post_id   as string | null) ?? null,
+      imageUrl: (data?.featured_image_url as string | null) ?? null,
+    };
+  }
+
+  // featured_image_url 列がまだ DB に存在しない場合は combined SELECT がエラーになる。
+  // その場合は featured_post_id だけを取得してフォールバック。
+  const { data: fallback } = await supabase
+    .from("profiles")
+    .select("featured_post_id")
+    .eq("id", userId)
+    .single();
   return {
-    postId:   (data?.featured_post_id   as string | null) ?? null,
-    imageUrl: (data?.featured_image_url as string | null) ?? null,
+    postId:   (fallback?.featured_post_id as string | null) ?? null,
+    imageUrl: null,
   };
 }
 
