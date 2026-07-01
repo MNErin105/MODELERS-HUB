@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Post, Author } from "@/lib/types";
@@ -23,6 +24,9 @@ type Props = {
   username?: string;
   likedPosts?: Post[];
   savedPosts?: Post[];
+  featuredThumbnailUrl?: string;
+  featuredPostId?: string;
+  onSetFeatured?: (postId: string) => void;
   onSignOut?: () => void;
   onUpdateAvatar?: (file: File) => Promise<void>;
   pinnedPostIds?: string[];
@@ -34,6 +38,7 @@ export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
   isOwnProfile = false, username,
   likedPosts = [], savedPosts = [],
+  featuredThumbnailUrl, featuredPostId, onSetFeatured,
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
@@ -107,11 +112,27 @@ export default function ProfilePageClient({
 
         {/* Profile header card */}
         <div
-          className="rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-6"
+          className="rounded-2xl p-6 sm:p-8 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 relative overflow-hidden"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
+          {featuredThumbnailUrl && (
+            <>
+              <Image
+                src={featuredThumbnailUrl}
+                alt=""
+                fill
+                className="object-cover"
+                style={{ opacity: 0.22 }}
+                sizes="(max-width: 768px) 100vw, 1440px"
+              />
+              <div
+                className="absolute inset-0"
+                style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
+              />
+            </>
+          )}
           {/* Avatar */}
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 z-[1]">
             <div
               className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden"
               style={{ border: "3px solid var(--accent-muted)" }}
@@ -144,7 +165,7 @@ export default function ProfilePageClient({
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 relative z-[1]">
             <div className="flex flex-wrap items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
                 {author.name}
@@ -270,6 +291,8 @@ export default function ProfilePageClient({
                   posts={pinnedPosts}
                   pinnedIds={pinnedSet}
                   onTogglePin={onTogglePin}
+                  featuredId={featuredPostId}
+                  onSetFeatured={onSetFeatured}
                 />
                 {unpinnedPosts.length > 0 && (
                   <div className="mt-6 mb-6" style={{ borderTop: "1px solid var(--border-subtle)" }} />
@@ -280,6 +303,8 @@ export default function ProfilePageClient({
               posts={unpinnedPosts}
               pinnedIds={pinnedSet}
               onTogglePin={onTogglePin}
+              featuredId={featuredPostId}
+              onSetFeatured={onSetFeatured}
             />
           </>
         ) : (

@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
 import { getPostsByUserId, getPostsByIds } from "@/lib/supabase/queries";
 import { fetchPinnedPostIds, addPin, removePin } from "@/lib/pins";
+import { getFeaturedPostId, setFeaturedPost, clearFeaturedPost } from "@/lib/featured";
 import { useApp } from "@/lib/context/AppContext";
 import ProfilePageClient from "./ProfilePageClient";
 import type { Post } from "@/lib/types";
@@ -20,6 +21,7 @@ export default function DynamicProfilePage() {
   const [postsLoading, setPostsLoading] = useState(true);
   const [pinnedPostIds, setPinnedPostIds] = useState<string[]>([]);
   const [pinError, setPinError] = useState<string | null>(null);
+  const [featuredPostId, setFeaturedPostId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,9 +48,11 @@ export default function DynamicProfilePage() {
     Promise.all([
       getPostsByUserId(user.id),
       fetchPinnedPostIds(user.id),
-    ]).then(([owned, pinIds]) => {
+      getFeaturedPostId(user.id),
+    ]).then(([owned, pinIds, featuredId]) => {
       setOwnPosts(owned);
       setPinnedPostIds(pinIds);
+      setFeaturedPostId(featuredId);
       setPostsLoading(false);
     }).catch(() => {
       setPostsLoading(false);
@@ -83,9 +87,23 @@ export default function DynamicProfilePage() {
     }
   }
 
+  async function handleSetFeatured(postId: string) {
+    if (!user) return;
+    if (featuredPostId === postId) {
+      await clearFeaturedPost(user.id);
+      setFeaturedPostId(null);
+    } else {
+      await setFeaturedPost(user.id, postId);
+      setFeaturedPostId(postId);
+    }
+  }
+
   const author     = authUserToAuthor(user);
   const totalLikes = ownPosts.reduce((acc, p) => acc + p.likeCount, 0);
   const totalSaves = ownPosts.reduce((acc, p) => acc + p.saveCount, 0);
+  const featuredThumbnailUrl = featuredPostId
+    ? ownPosts.find((p) => p.id === featuredPostId)?.thumbnailUrl
+    : undefined;
 
   return (
     <ProfilePageClient
@@ -97,6 +115,9 @@ export default function DynamicProfilePage() {
       username={user.username}
       likedPosts={likedPosts}
       savedPosts={savedPosts}
+      featuredThumbnailUrl={featuredThumbnailUrl}
+      featuredPostId={featuredPostId ?? undefined}
+      onSetFeatured={handleSetFeatured}
       onSignOut={signOut}
       onUpdateAvatar={updateAvatar}
       pinnedPostIds={pinnedPostIds}

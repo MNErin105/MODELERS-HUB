@@ -200,7 +200,7 @@ export async function getPostsByIds(ids: string[]): Promise<Post[]> {
 export async function getProfileById(id: string) {
   const { data } = await supabase
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_url, country")
+    .select("id, username, display_name, bio, avatar_url, country, featured_post_id")
     .eq("id", id)
     .single();
   return data ?? null;

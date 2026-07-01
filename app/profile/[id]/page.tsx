@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProfileById, getPostsByUserId, getFollowersCount } from "@/lib/supabase/queries";
+import { getProfileById, getPostsByUserId, getFollowersCount, getPostsByIds } from "@/lib/supabase/queries";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
 import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
 import type { Author } from "@/lib/types";
@@ -18,6 +18,13 @@ export default async function ProfilePage({ params }: Props) {
   ]);
 
   if (!profile) return notFound();
+
+  const featuredPostId = profile.featured_post_id as string | null;
+  const featuredThumbnailUrl = featuredPostId
+    ? await getPostsByIds([featuredPostId])
+        .then((posts) => posts[0]?.thumbnailUrl ?? undefined)
+        .catch(() => undefined)
+    : undefined;
 
   const author: Author = {
     id:             profile.id as string,
@@ -39,6 +46,7 @@ export default async function ProfilePage({ params }: Props) {
       totalLikes={totalLikes}
       totalSaves={totalSaves}
       username={profile.username as string}
+      featuredThumbnailUrl={featuredThumbnailUrl}
     />
   );
 }
