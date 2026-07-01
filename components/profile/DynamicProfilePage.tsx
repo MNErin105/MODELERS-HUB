@@ -48,15 +48,18 @@ export default function DynamicProfilePage() {
     Promise.all([
       getPostsByUserId(user.id),
       fetchPinnedPostIds(user.id),
-      getFeaturedPostId(user.id),
-    ]).then(([owned, pinIds, featuredId]) => {
+    ]).then(([owned, pinIds]) => {
       setOwnPosts(owned);
       setPinnedPostIds(pinIds);
-      setFeaturedPostId(featuredId);
       setPostsLoading(false);
     }).catch(() => {
       setPostsLoading(false);
     });
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) return;
+    getFeaturedPostId(user.id).then(setFeaturedPostId).catch(() => {});
   }, [user?.id]);
 
   if (loading || !user || postsLoading) {
