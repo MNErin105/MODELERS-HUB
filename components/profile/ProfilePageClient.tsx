@@ -115,32 +115,47 @@ export default function ProfilePageClient({
 
         {/* Profile header card */}
         <div
-          className="rounded-2xl mb-8 overflow-hidden flex flex-col md:flex-row"
+          className="rounded-2xl mb-8 overflow-hidden relative min-h-[200px]"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
-          {/* Left: profile info */}
-          <div className="relative flex-1 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-            {/* Mobile: background image (hidden on md+) */}
-            {featuredThumbnailUrl && (
-              <>
-                <div className="absolute inset-0 md:hidden">
-                  <Image
-                    src={featuredThumbnailUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    style={{ opacity: 0.22 }}
-                    sizes="100vw"
-                  />
-                </div>
-                <div
-                  className="absolute inset-0 md:hidden"
-                  style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
+          {featuredThumbnailUrl && (
+            <>
+              {/* Desktop: right-side image */}
+              <div className="hidden md:block absolute inset-y-0 right-0 z-0" style={{ width: "55%" }}>
+                <Image
+                  src={featuredThumbnailUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="55vw"
                 />
-              </>
-            )}
+              </div>
+              {/* Desktop: gradient overlay (solid bg-secondary → semi-transparent → transparent) */}
+              <div
+                className="hidden md:block absolute inset-0 z-[1]"
+                style={{ background: "linear-gradient(to right, var(--bg-secondary) 0%, rgba(10,10,10,0.6) 30%, transparent 65%)" }}
+              />
+              {/* Mobile: full-width background */}
+              <div className="absolute inset-0 md:hidden z-0">
+                <Image
+                  src={featuredThumbnailUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  style={{ opacity: 0.22 }}
+                  sizes="100vw"
+                />
+              </div>
+              <div
+                className="absolute inset-0 md:hidden z-0"
+                style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
+              />
+            </>
+          )}
+          {/* Profile content */}
+          <div className="relative z-[2] p-6 sm:p-8 md:py-7 md:px-8 flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-start gap-6 md:gap-4">
             {/* Avatar */}
-            <div className="relative shrink-0 z-[1]">
+            <div className="relative shrink-0">
             <div
               className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden"
               style={{ border: "3px solid var(--accent-muted)" }}
@@ -173,7 +188,7 @@ export default function ProfilePageClient({
             )}
           </div>
 
-          <div className="flex-1 min-w-0 relative z-[1]">
+          <div className="flex-1 md:flex-none min-w-0">
             <div className="flex flex-wrap items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
                 {author.name}
@@ -241,18 +256,6 @@ export default function ProfilePageClient({
             )}
           </div>
           </div>
-          {/* Right: featured image (desktop only, 3:2) */}
-          {featuredThumbnailUrl && (
-            <div className="hidden md:block relative shrink-0" style={{ width: 280 }}>
-              <Image
-                src={featuredThumbnailUrl}
-                alt=""
-                fill
-                className="object-cover"
-                sizes="280px"
-              />
-            </div>
-          )}
         </div>
 
         {/* Tab bar */}
