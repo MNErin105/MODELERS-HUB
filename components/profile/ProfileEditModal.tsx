@@ -200,8 +200,7 @@ export default function ProfileEditModal({
           </div>
 
           {/* ── 看板作品 ──────────────────────────────────────────── */}
-          {authorPosts.length > 0 && (
-            <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <label
                   className="text-xs font-semibold uppercase tracking-widest"
@@ -221,6 +220,11 @@ export default function ProfileEditModal({
                   </button>
                 )}
               </div>
+              {authorPosts.length === 0 ? (
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  まだ投稿がありません / No posts yet
+                </p>
+              ) : (
               <div
                 className="flex gap-2 overflow-x-auto pb-1"
                 style={{ scrollbarWidth: "thin" }}
@@ -262,13 +266,15 @@ export default function ProfileEditModal({
                   );
                 })}
               </div>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {selectedFeaturedId
-                  ? authorPosts.find((p) => p.id === selectedFeaturedId)?.title ?? ""
-                  : "タップして看板作品を選択"}
-              </p>
+              )}
+              {authorPosts.length > 0 && (
+                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {selectedFeaturedId
+                    ? authorPosts.find((p) => p.id === selectedFeaturedId)?.title ?? ""
+                    : "タップして看板作品を選択"}
+                </p>
+              )}
             </div>
-          )}
 
           {error && (
             <p className="text-sm" style={{ color: "#f87171" }}>{error}</p>
