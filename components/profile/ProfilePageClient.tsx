@@ -149,13 +149,13 @@ export default function ProfilePageClient({
                   alt=""
                   fill
                   className="object-cover"
-                  style={{ opacity: 0.22 }}
+                  style={{ opacity: 0.4 }}
                   sizes="100vw"
                 />
               </div>
               <div
                 className="absolute inset-0 md:hidden z-0"
-                style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.9) 0%, rgba(10,10,11,0.55) 100%)" }}
+                style={{ background: "linear-gradient(to bottom right, rgba(10,10,11,0.75) 0%, rgba(10,10,11,0.4) 100%)" }}
               />
             </>
           )}
