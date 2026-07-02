@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Post, Author } from "@/lib/types";
@@ -129,12 +128,11 @@ export default function ProfilePageClient({
                   maskImage:       "linear-gradient(to right, transparent 0%, black 25%, black 100%)",
                 }}
               >
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={featuredThumbnailUrl}
                   alt=""
-                  fill
-                  className="object-cover"
-                  sizes="65vw"
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }}
                 />
               </div>
               {/* Desktop: gradient overlay — never fully transparent so bright images don't bleed */}
@@ -144,13 +142,11 @@ export default function ProfilePageClient({
               />
               {/* Mobile: full-width background */}
               <div className="absolute inset-0 md:hidden z-0">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={featuredThumbnailUrl}
                   alt=""
-                  fill
-                  className="object-cover"
-                  style={{ opacity: 0.4 }}
-                  sizes="100vw"
+                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.4 }}
                 />
               </div>
               <div
