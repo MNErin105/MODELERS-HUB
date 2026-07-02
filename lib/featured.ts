@@ -56,7 +56,8 @@ export async function uploadFeaturedImage(
     .upload(path, buffer, { contentType, upsert: true });
   if (error) throw new Error(error.message);
   const { data } = supabase.storage.from("featured-images").getPublicUrl(path);
-  const url = data.publicUrl;
+  // Append a timestamp so each upload gets a unique URL, busting browser/CDN cache.
+  const url = `${data.publicUrl}?t=${Date.now()}`;
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
   console.log("[uploadFeaturedImage] auth user:", authData?.user?.id, authError);
