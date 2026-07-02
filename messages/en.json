@@ -105,6 +105,15 @@
       "wip": "WIP",
       "liked": "Liked",
       "saved": "Saved"
+    },
+    "edit": {
+      "featuredWork": "Featured Work",
+      "clearSelection": "Clear selection",
+      "uploadImage": "Upload image",
+      "changeImage": "Change",
+      "deleteImage": "Delete",
+      "noPostsYet": "No posts yet",
+      "selectPostHint": "Select a post to use as your profile background"
     }
   },
   "saved": {

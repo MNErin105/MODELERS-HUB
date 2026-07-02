@@ -105,6 +105,15 @@
       "wip": "WIP",
       "liked": "いいね",
       "saved": "保存済み"
+    },
+    "edit": {
+      "featuredWork": "看板作品",
+      "clearSelection": "選択解除",
+      "uploadImage": "画像をアップロード",
+      "changeImage": "変更",
+      "deleteImage": "削除",
+      "noPostsYet": "まだ投稿がありません",
+      "selectPostHint": "投稿を選んでプロフィール背景に設定"
     }
   },
   "saved": {

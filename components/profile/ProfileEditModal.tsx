@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { X, Loader2, Upload } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { setFeaturedPost, clearFeaturedPost, uploadFeaturedImage, clearFeaturedImageUrl } from "@/lib/featured";
@@ -41,6 +42,7 @@ export default function ProfileEditModal({
   onClose,
 }: Props) {
   const { updateProfile, user } = useAuth();
+  const t = useTranslations("profile.edit");
 
   const [name,          setName]          = useState(initialName);
   const [bio,           setBio]           = useState(initialBio);
@@ -326,7 +328,7 @@ export default function ProfileEditModal({
                 className="text-xs font-semibold uppercase tracking-widest"
                 style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
               >
-                看板作品
+                {t("featuredWork")}
               </label>
               {bgMode !== "none" && (
                 <button
@@ -336,7 +338,7 @@ export default function ProfileEditModal({
                   className="text-xs hover:opacity-70 transition-opacity"
                   style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
                 >
-                  選択解除
+                  {t("clearSelection")}
                 </button>
               )}
             </div>
@@ -355,7 +357,7 @@ export default function ProfileEditModal({
                 }}
               >
                 <Upload size={12} />
-                {activeImageUrl ? "変更" : "画像をアップロード"}
+                {activeImageUrl ? t("changeImage") : t("uploadImage")}
               </button>
               <input
                 ref={imageInputRef}
@@ -386,7 +388,7 @@ export default function ProfileEditModal({
                     className="text-xs hover:opacity-70 transition-opacity"
                     style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
                   >
-                    削除
+                    {t("deleteImage")}
                   </button>
                 </>
               )}
@@ -397,7 +399,7 @@ export default function ProfileEditModal({
             {/* Post thumbnails */}
             {authorPosts.length === 0 ? (
               <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                まだ投稿がありません / No posts yet
+                {t("noPostsYet")}
               </p>
             ) : (
               <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
@@ -434,7 +436,7 @@ export default function ProfileEditModal({
               {bgMode === "post" && selectedFeaturedId
                 ? authorPosts.find((p) => p.id === selectedFeaturedId)?.title ?? ""
                 : bgMode === "none" && authorPosts.length > 0
-                  ? "投稿を選んでプロフィール背景に設定"
+                  ? t("selectPostHint")
                   : ""}
             </p>
           </div>
