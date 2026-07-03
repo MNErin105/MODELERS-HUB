@@ -9,6 +9,7 @@ import { AppProvider } from "@/lib/context/AppContext";
 import { LocaleProvider } from "@/lib/context/LocaleContext";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { NotificationProvider } from "@/lib/context/NotificationContext";
+import { Analytics } from "@vercel/analytics/next";
 
 // ─── Google Fonts ─────────────────────────────────────────────────────────
 
@@ -75,6 +76,7 @@ export default function RootLayout({
             </NotificationProvider>
           </AuthProvider>
         </LocaleProvider>
+        <Analytics />
       </body>
     </html>
   );
