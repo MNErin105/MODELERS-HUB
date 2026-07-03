@@ -57,6 +57,7 @@ export default function PostCard({ post, badge, isPinned, onTogglePin }: Props) 
           loading="lazy"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          style={{ objectPosition: "center 20%" }}
         />
 
         {/* Category badges — top-left, always visible */}
