@@ -10,7 +10,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
 import AvatarCropModal from "./AvatarCropModal";
-import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil } from "lucide-react";
+import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil, PlusSquare } from "lucide-react";
 
 type Tab = "works" | "wip" | "liked" | "saved";
 
@@ -44,7 +44,8 @@ export default function ProfilePageClient({
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
-  const t = useTranslations("profile");
+  const t    = useTranslations("profile");
+  const tNav = useTranslations("nav");
   const [activeTab, setActiveTab] = useState<Tab>("works");
   const [uploading, setUploading]   = useState(false);
   const [editOpen,  setEditOpen]    = useState(false);
@@ -104,13 +105,24 @@ export default function ProfilePageClient({
   return (
     <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
       <div className="max-w-[1440px] mx-auto px-6 py-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm mb-8 hover:opacity-80 transition-opacity"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <ChevronLeft size={16} /> {t("backToArchive")}
-        </Link>
+        <div className="flex items-center justify-between mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm hover:opacity-80 transition-opacity"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <ChevronLeft size={16} /> {t("backToArchive")}
+          </Link>
+          {isOwnProfile && (
+            <Link
+              href="/posts/new"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+            >
+              <PlusSquare size={15} /><span>{tNav("newPost")}</span>
+            </Link>
+          )}
+        </div>
 
         {/* Profile header card */}
         <div
