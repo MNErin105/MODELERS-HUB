@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Bookmark, Heart } from "lucide-react";
-import { Post, Category } from "@/lib/types";
+import { Post } from "@/lib/types";
 import { useApp } from "@/lib/context/AppContext";
 import UserAvatar from "@/components/ui/UserAvatar";
 
@@ -18,16 +18,6 @@ export type PostBadge = {
   color: string;  // CSS color for text
 };
 
-/**
- * Aspect ratio per category.
- * Tall subjects (mecha, figures) → 4:5.
- * Wide subjects (vehicles, aircraft) → 1:1.
- * Two heights create natural masonry variation.
- */
-function cardAspect(categories: Category[]): "4/5" | "1/1" {
-  if (categories.some((c) => ["Gunpla", "Character Model"].includes(c))) return "4/5";
-  return "1/1";
-}
 
 type Props = {
   post: Post;
@@ -42,8 +32,6 @@ export default function PostCard({ post, badge, isPinned, onTogglePin }: Props) 
   const liked = likedIds.has(post.id);
   const [saveAnim, setSaveAnim] = useState(false);
   const [likeAnim, setLikeAnim] = useState(false);
-  const aspect = cardAspect(post.categories);
-
   function handleSave(e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation();
     toggleSave(post.id);
@@ -60,8 +48,7 @@ export default function PostCard({ post, badge, isPinned, onTogglePin }: Props) 
       {/* ── Image — the whole card ──────────────────────────────── */}
       <Link
         href={`/posts/${post.id}`}
-        className="block relative overflow-hidden rounded-xl"
-        style={{ aspectRatio: aspect }}
+        className="block relative overflow-hidden rounded-xl aspect-square"
       >
         <Image
           src={post.thumbnailUrl}

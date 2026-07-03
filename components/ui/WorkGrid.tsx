@@ -25,9 +25,9 @@ export default function WorkGrid({ posts, badgeMap, emptyMessage, pinnedIds, onT
   }
 
   return (
-    <div className="columns-2 sm:columns-3 lg:columns-4" style={{ columnGap: "10px" }}>
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[10px]">
       {posts.map((post) => (
-        <div key={post.id} className="break-inside-avoid mb-[10px]">
+        <div key={post.id}>
           <PostCard
             post={post}
             badge={badgeMap?.[post.id]}
