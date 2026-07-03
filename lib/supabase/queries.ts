@@ -62,6 +62,7 @@ function rawToPost(raw: RawPost): Post {
   const author: Author = raw.profiles
     ? {
         id:             raw.profiles.id,
+        username:       raw.profiles.username,
         name:           raw.profiles.display_name,
         avatarUrl:      raw.profiles.avatar_url ?? "",
         country:        raw.profiles.country ?? "",
@@ -69,7 +70,7 @@ function rawToPost(raw: RawPost): Post {
         followersCount: 0,
         followingCount: 0,
       }
-    : { id: "unknown", name: "Unknown", avatarUrl: "", country: "", bio: "", followersCount: 0, followingCount: 0 };
+    : { id: "unknown", username: "unknown", name: "Unknown", avatarUrl: "", country: "", bio: "", followersCount: 0, followingCount: 0 };
 
   const images: WorkPhoto[] = sortedImages.map((img) => ({
     url:           img.image_url,
@@ -206,6 +207,15 @@ export async function getProfileById(id: string) {
   return data ?? null;
 }
 
+export async function getProfileByUsername(username: string) {
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username, display_name, bio, avatar_url, country, featured_post_id, featured_image_url")
+    .eq("username", username)
+    .single();
+  return data ?? null;
+}
+
 export async function getFollowersCount(userId: string): Promise<number> {
   const { count } = await supabase
     .from("follows")
@@ -294,6 +304,7 @@ export async function fetchComments(postId: string): Promise<Comment[]> {
       createdAt: row.created_at as string,
       author: {
         id:             p?.id ?? "unknown",
+        username:       p?.username ?? "unknown",
         name:           p?.display_name ?? "Anonymous",
         avatarUrl:      p?.avatar_url ?? "",
         country:        p?.country ?? "",

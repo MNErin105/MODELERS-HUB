@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
-import { getProfileById, getPostsByUserId, getFollowersCount, getPostsByIds } from "@/lib/supabase/queries";
+import { getProfileById, getProfileByUsername, getPostsByUserId, getFollowersCount, getPostsByIds } from "@/lib/supabase/queries";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
 import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
 import type { Author } from "@/lib/types";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -11,13 +13,16 @@ export default async function ProfilePage({ params }: Props) {
 
   if (id === "self") return <DynamicProfilePage />;
 
-  const [profile, authorPosts, followersCount] = await Promise.all([
-    getProfileById(id),
-    getPostsByUserId(id),
-    getFollowersCount(id),
-  ]);
+  const profile = await (UUID_RE.test(id) ? getProfileById(id) : getProfileByUsername(id));
 
   if (!profile) return notFound();
+
+  const profileId = profile.id as string;
+
+  const [authorPosts, followersCount] = await Promise.all([
+    getPostsByUserId(profileId),
+    getFollowersCount(profileId),
+  ]);
 
   const featuredPostId     = profile.featured_post_id    as string | null;
   const rawFeaturedImageUrl = profile.featured_image_url as string | null;
@@ -32,7 +37,8 @@ export default async function ProfilePage({ params }: Props) {
   }
 
   const author: Author = {
-    id:             profile.id as string,
+    id:             profileId,
+    username:       profile.username as string,
     name:           profile.display_name as string,
     avatarUrl:      (profile.avatar_url as string | null) ?? "",
     country:        (profile.country as string | null) ?? "",

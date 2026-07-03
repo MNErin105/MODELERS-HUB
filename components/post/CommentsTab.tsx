@@ -125,6 +125,7 @@ export default function CommentsTab({ postId }: Props) {
         createdAt: data.created_at as string,
         author: {
           id:             user.id,
+          username:       user.username,
           name:           user.name,
           avatarUrl:      user.avatarUrl,
           country:        user.country,

@@ -267,6 +267,7 @@ export function useAuth() {
 export function authUserToAuthor(user: AuthUser): Author {
   return {
     id:             user.id,
+    username:       user.username,
     name:           user.name,
     avatarUrl:      user.avatarUrl,
     country:        user.country,

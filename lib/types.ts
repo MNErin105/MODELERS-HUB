@@ -77,6 +77,7 @@ export const CATEGORY_META: Record<Category, CategoryMeta> = {
 
 export type Author = {
   id: string;
+  username: string;
   name: string;
   avatarUrl: string;
   country: string;

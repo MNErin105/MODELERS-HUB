@@ -128,7 +128,7 @@ export default function WorksTab({ post }: Props) {
 
         {/* Author row + Follow */}
         <div className="flex items-center gap-3">
-          <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
+          <Link href={`/profile/${post.author.username}`} className="flex items-center gap-3 group">
             <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0">
               <UserAvatar src={post.author.avatarUrl} alt={post.author.name} fill />
             </div>

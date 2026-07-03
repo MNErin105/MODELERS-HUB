@@ -14,7 +14,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 function UserItem({ user, onClick }: { user: QuickUser; onClick: () => void }) {
   return (
     <Link
-      href={`/profile/${user.id}`}
+      href={`/profile/${user.username}`}
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-2.5 transition-opacity hover:opacity-70"
       style={{ borderBottom: "1px solid var(--border-subtle)" }}

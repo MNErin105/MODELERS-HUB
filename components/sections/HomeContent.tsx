@@ -22,7 +22,7 @@ import StoryCreateModal from "@/components/story/StoryCreateModal";
 // ── People card ───────────────────────────────────────────────────────────────
 
 function PeopleCard({ user }: { user: UserProfile }) {
-  const href = `/profile/${user.id}`;
+  const href = `/profile/${user.username}`;
   return (
     <Link
       href={href}
