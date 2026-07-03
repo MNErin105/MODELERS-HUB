@@ -6,7 +6,7 @@ import { CATEGORIES, Category, Post } from "@/lib/types";
 import WorkGrid from "@/components/ui/WorkGrid";
 import SectionCategoryFilter from "@/components/ui/SectionCategoryFilter";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 24;
 
 type Props = { posts: Post[]; categories?: Category[]; onReorderClick?: () => void };
 
