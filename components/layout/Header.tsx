@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense, useState, useRef, useEffect, useCallback } from "react";
-import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck } from "lucide-react";
+import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
 import UserAvatar from "@/components/ui/UserAvatar";
@@ -173,9 +173,11 @@ function AvatarDropdown({ onClose }: { onClose: () => void }) {
 
 // ── Mobile menu ───────────────────────────────────────────────────────────────
 
-function MobileMenu({ onClose }: { onClose: () => void }) {
+function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
   const { user, openLoginModal, signOut } = useAuth();
   const t = useTranslations("nav");
+  const [rankingOpen, setRankingOpen] = useState(false);
+  const isJa = locale === "ja";
 
   return (
     <div
@@ -184,6 +186,19 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
     >
       <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col gap-4">
         <SearchBar />
+
+        {/* Ranking teaser */}
+        <div className="relative">
+          <button
+            onClick={() => setRankingOpen((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            <Trophy size={15} style={{ color: "#f59e0b" }} />
+            {isJa ? "月間ランキング" : "Monthly Ranking"}
+          </button>
+          {rankingOpen && <RankingPopup onClose={() => setRankingOpen(false)} locale={locale} />}
+        </div>
 
         <div className="flex flex-col gap-1">
           <Link
@@ -236,18 +251,68 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Ranking popup ─────────────────────────────────────────────────────────────
+
+function RankingPopup({ onClose, locale }: { onClose: () => void; locale: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const isJa = locale === "ja";
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-2 w-72 rounded-xl overflow-hidden shadow-2xl z-[100]"
+      style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
+    >
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+        <div className="flex items-center gap-2">
+          <Trophy size={14} style={{ color: "#f59e0b" }} />
+          <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+            {isJa ? "月間ランキング" : "Monthly Ranking"}
+          </span>
+        </div>
+        <button onClick={onClose} className="hover:opacity-70 transition-opacity" style={{ color: "var(--text-muted)" }}>
+          <X size={14} />
+        </button>
+      </div>
+      <div className="px-4 py-5 text-center">
+        <Trophy size={32} className="mx-auto mb-3" style={{ color: "#f59e0b", opacity: 0.5 }} />
+        <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+          MODELERS HUB {isJa ? "月間ランキング" : "Monthly Ranking"}
+        </p>
+        <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+          {isJa
+            ? "近日公開予定！各カテゴリ100人超えで解放"
+            : "Coming soon! Unlocks when each category reaches 100 users"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ── Main header inner ─────────────────────────────────────────────────────────
 
 function HeaderInner() {
   const { user, loading, openLoginModal } = useAuth();
   const { unreadCount } = useNotifications();
+  const { locale } = useLocale();
   const t = useTranslations("nav");
 
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [notifOpen,   setNotifOpen]   = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
+  const [menuOpen,    setMenuOpen]    = useState(false);
 
-  const closeNotif = useCallback(() => setNotifOpen(false), []);
-  const closeMenu  = useCallback(() => setMenuOpen(false),  []);
+  const closeNotif   = useCallback(() => setNotifOpen(false),   []);
+  const closeRanking = useCallback(() => setRankingOpen(false), []);
+  const closeMenu    = useCallback(() => setMenuOpen(false),    []);
 
   return (
     <header
@@ -297,6 +362,21 @@ function HeaderInner() {
           <div className="hidden md:flex">
             <LocaleToggle />
           </div>
+
+          {/* Ranking — logged-in only */}
+          {!loading && user && (
+            <div className="relative">
+              <button
+                onClick={() => setRankingOpen((v) => !v)}
+                aria-label="Ranking"
+                className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <Trophy size={18} />
+              </button>
+              {rankingOpen && <RankingPopup onClose={closeRanking} locale={locale} />}
+            </div>
+          )}
 
           {/* Notification bell — logged-in only */}
           {!loading && user && (
@@ -356,7 +436,7 @@ function HeaderInner() {
       </div>
 
       {/* Mobile menu */}
-      {menuOpen && <MobileMenu onClose={closeMenu} />}
+      {menuOpen && <MobileMenu onClose={closeMenu} locale={locale} />}
     </header>
   );
 }
