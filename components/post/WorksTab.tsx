@@ -79,18 +79,17 @@ export default function WorksTab({ post }: Props) {
         <div
           className="relative w-full rounded-xl overflow-hidden"
           onClick={() => setLightboxOpen(true)}
-          style={{ background: "var(--bg-overlay)", cursor: "zoom-in" }}
+          style={{ background: "var(--bg-overlay)", cursor: "zoom-in", aspectRatio: "4 / 3" }}
         >
           <Image
             key={active.url}
             src={active.url}
             alt={active.caption}
-            width={800}
-            height={600}
+            fill
             loading="eager"
-            preload={activeIdx === 0}
             sizes="(max-width: 1024px) 100vw, 60vw"
-            className="w-full h-auto block"
+            className="object-cover"
+            style={{ objectPosition: "center 20%" }}
           />
           {/* Caption */}
           <div
