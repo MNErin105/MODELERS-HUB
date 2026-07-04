@@ -47,7 +47,7 @@ export default function WorksTab({ post }: Props) {
     setIsTranslating(true);
     try {
       const { data, error } = await supabase.functions.invoke("translate", {
-        body: { text: post.description, targetLang: locale === "ja" ? "EN" : "JA" },
+        body: { text: post.description, targetLang: locale === "ja" ? "JA" : "EN" },
       });
       if (error || !data?.translatedText) throw error ?? new Error("No translation returned");
       setTranslatedText(data.translatedText);
