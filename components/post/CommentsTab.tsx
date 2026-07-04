@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Comment } from "@/lib/types";
 import { ChevronDown, ChevronUp, MessageSquare, Send, LogIn, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useAuth } from "@/lib/context/AuthContext";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +23,36 @@ function timeAgo(isoDate: string) {
 function ReplyThread({ comment }: { comment: Comment }) {
   const [open, setOpen] = useState(false);
   const t = useTranslations("post");
+  const locale = useLocale();
+  const [translatedText,  setTranslatedText]  = useState<string | null>(null);
+  const [isTranslating,   setIsTranslating]   = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+
+  async function handleTranslate() {
+    if (showTranslation) {
+      setShowTranslation(false);
+      return;
+    }
+    if (translatedText) {
+      setShowTranslation(true);
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("translate", {
+        body: { text: comment.content, targetLang: locale === "ja" ? "JA" : "EN" },
+      });
+      if (error || !data?.translatedText) throw error ?? new Error("No translation returned");
+      setTranslatedText(data.translatedText);
+      setShowTranslation(true);
+    } catch (err) {
+      console.error("[translate]", err);
+      setTranslatedText(locale === "ja" ? "翻訳に失敗しました" : "Translation failed.");
+      setShowTranslation(true);
+    } finally {
+      setIsTranslating(false);
+    }
+  }
 
   return (
     <div>
@@ -40,8 +70,22 @@ function ReplyThread({ comment }: { comment: Comment }) {
             </span>
           </div>
           <p className="text-sm leading-relaxed mt-1" style={{ color: "var(--text-secondary)" }}>
-            {comment.content}
+            {showTranslation ? translatedText : comment.content}
           </p>
+          {comment.content && (
+            <button
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              className="mt-1 text-xs hover:opacity-70 transition-opacity disabled:opacity-40"
+              style={{ color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
+            >
+              {isTranslating
+                ? (locale === "ja" ? "翻訳中..." : "Translating...")
+                : showTranslation
+                  ? (locale === "ja" ? "元の文章を見る" : "Show original")
+                  : (locale === "ja" ? "翻訳を見る" : "See translation")}
+            </button>
+          )}
 
           {comment.replies.length > 0 && (
             <button
