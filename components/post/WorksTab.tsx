@@ -15,6 +15,7 @@ import UserAvatar from "@/components/ui/UserAvatar";
 import { categorySlug } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { translateTag } from "@/lib/tagTranslations";
+import { supabase } from "@/lib/supabase";
 
 const ADMIN_UID = "770a5443-5285-4488-a662-c7fcab7310a6";
 
@@ -29,7 +30,36 @@ export default function WorksTab({ post }: Props) {
 
   const [activeIdx, setActiveIdx]       = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [translatedText,  setTranslatedText]  = useState<string | null>(null);
+  const [isTranslating,   setIsTranslating]   = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
   const active = post.images[activeIdx];
+
+  async function handleTranslate() {
+    if (showTranslation) {
+      setShowTranslation(false);
+      return;
+    }
+    if (translatedText) {
+      setShowTranslation(true);
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("translate", {
+        body: { text: post.description, targetLang: locale === "ja" ? "EN" : "JA" },
+      });
+      if (error || !data?.translatedText) throw error ?? new Error("No translation returned");
+      setTranslatedText(data.translatedText);
+      setShowTranslation(true);
+    } catch (err) {
+      console.error("[translate]", err);
+      setTranslatedText(locale === "ja" ? "翻訳に失敗しました" : "Translation failed.");
+      setShowTranslation(true);
+    } finally {
+      setIsTranslating(false);
+    }
+  }
 
   if (post.images.length === 0) {
     return (
@@ -147,12 +177,28 @@ export default function WorksTab({ post }: Props) {
         </div>
 
         {/* Description */}
-        <div
-          className="p-4 rounded-xl text-sm leading-relaxed"
-          style={{ background: "var(--bg-overlay)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
-        >
-          {post.description}
-        </div>
+        {post.description && (
+          <div
+            className="p-4 rounded-xl text-sm leading-relaxed"
+            style={{ background: "var(--bg-overlay)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            {showTranslation ? translatedText : post.description}
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={handleTranslate}
+                disabled={isTranslating}
+                className="text-xs hover:opacity-70 transition-opacity disabled:opacity-40"
+                style={{ color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
+              >
+                {isTranslating
+                  ? (locale === "ja" ? "翻訳中..." : "Translating...")
+                  : showTranslation
+                    ? (locale === "ja" ? "元の文章を見る" : "Show original")
+                    : (locale === "ja" ? "翻訳を見る" : "See translation")}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Tags */}
         {post.tags.length > 0 && (
