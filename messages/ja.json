@@ -220,11 +220,13 @@
     "deleteConfirm": "削除する",
     "deleting": "削除中…",
     "imageOrderHint": "ドラッグで並び替え · 先頭がカバー画像 · ×で削除",
+    "paintToolImageHint": "任意 · 最大3枚",
     "tagHint": "Enter またはカンマで追加",
     "tagHintMax": "— 最大{max}個",
     "notFound": "投稿が見つかりません。セッションが切れた可能性があります。",
     "sections": {
       "photos": "写真",
+      "paintTools": "使用した塗料・工具の写真",
       "about": "作品について",
       "materials": "使用素材・テクニック",
       "tags": "タグ",

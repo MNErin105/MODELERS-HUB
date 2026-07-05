@@ -108,6 +108,10 @@ export default function NewPostForm() {
   const [coverImages, setCoverImages] = useState<UploadedImage[]>([]);
   const coverFileMap = useRef(new Map<string, StoredFile>());
 
+  // Paint/tool reference photos — optional, max 3, separate table (post_paint_tool_images)
+  const [paintToolImages, setPaintToolImages] = useState<UploadedImage[]>([]);
+  const paintToolFileMap = useRef(new Map<string, StoredFile>());
+
   // WIP
   const [hasWIP,   setHasWIP]   = useState(false);
   const [wipSteps, setWipSteps] = useState<WIPStep[]>([
@@ -143,6 +147,26 @@ export default function NewPostForm() {
   }, []);
   const updateCaption  = useCallback((id: string, cap: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
+
+  const addPaintToolImages = useCallback(async (files: File[]) => {
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const { previewUrl, stored } = await prepareFile(file);
+        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
+        paintToolFileMap.current.set(preview.id, stored);
+        return preview;
+      }),
+    );
+    setPaintToolImages((prev) => [...prev, ...entries].slice(0, 3));
+  }, []);
+
+  const reorderPaintToolImages = useCallback((imgs: UploadedImage[]) => setPaintToolImages(imgs), []);
+  const deletePaintToolImage   = useCallback((id: string) => {
+    paintToolFileMap.current.delete(id);
+    setPaintToolImages((p) => p.filter((i) => i.id !== id));
+  }, []);
+  const updatePaintToolCaption = useCallback((id: string, cap: string) =>
+    setPaintToolImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
 
   // ── WIP handlers ────────────────────────────────────────────────────────────
   function addStep() { setWipSteps((p) => [...p, { id: uid(), title: "", description: "", images: [] }]); }
@@ -245,6 +269,31 @@ export default function NewPostForm() {
           sort_order: i,
         })).filter((r) => r.image_url);
         await supabase.from("post_images").insert(imageRows);
+      }
+
+      // 3b. Upload + INSERT paint/tool reference images
+      if (paintToolImages.length > 0) {
+        const paintToolUrls: string[] = [];
+        for (let i = 0; i < paintToolImages.length; i++) {
+          const img    = paintToolImages[i];
+          const stored = paintToolFileMap.current.get(img.id);
+          if (!stored) throw new Error("画像の参照が失われました。もう一度画像を選択してください。");
+          const path = `${user.id}/${postId}-paint-${i}.${stored.ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("post-images")
+            .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
+          if (upErr) throw new Error((upErr as { message?: string })?.message ?? "Image upload failed.");
+          const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
+          paintToolUrls.push(urlData.publicUrl);
+        }
+
+        const paintToolRows = paintToolImages.map((img, i) => ({
+          post_id:    postId,
+          image_url:  paintToolUrls[i] ?? "",
+          caption:    img.caption.trim() || null,
+          sort_order: i,
+        })).filter((r) => r.image_url);
+        await supabase.from("post_paint_tool_images").insert(paintToolRows);
       }
 
       // 4. Tags — insert-or-ignore, then SELECT to get id
@@ -386,6 +435,20 @@ export default function NewPostForm() {
                 {t("imageOrderHint")}
               </p>
             )}
+          </Section>
+
+          {/* ── Paint/tool reference photos ─────────────────────────────── */}
+          <Section title={t("sections.paintTools")}>
+            <ImageUploadZone onFilesAdded={addPaintToolImages} currentCount={paintToolImages.length} max={3} />
+            <ImagePreviewGrid
+              images={paintToolImages}
+              onReorder={reorderPaintToolImages}
+              onDelete={deletePaintToolImage}
+              onCaptionChange={updatePaintToolCaption}
+            />
+            <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+              {t("paintToolImageHint")}
+            </p>
           </Section>
 
           {/* ── Core info ────────────────────────────────────────────────── */}

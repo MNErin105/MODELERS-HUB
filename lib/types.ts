@@ -91,6 +91,8 @@ export type WorkPhoto = {
   caption: string;
   /** Author's per-image comment — shown only in the fullscreen lightbox, not in feed. */
   authorComment?: string | null;
+  /** True for photos from post_paint_tool_images (paints/tools used), rather than the main post_images gallery. */
+  isPaintTool?: boolean;
 };
 
 export type BuildStepImage = {

@@ -220,11 +220,13 @@
     "deleteConfirm": "Delete",
     "deleting": "Deleting…",
     "imageOrderHint": "Drag to reorder · First image is the cover · × to remove",
+    "paintToolImageHint": "Optional · max 3",
     "tagHint": "Enter or comma to add",
     "tagHintMax": "— max {max}",
     "notFound": "Post not found or session expired.",
     "sections": {
       "photos": "Photos",
+      "paintTools": "Paints & Tools Used",
       "about": "About the Build",
       "materials": "Materials & Techniques",
       "tags": "Tags",

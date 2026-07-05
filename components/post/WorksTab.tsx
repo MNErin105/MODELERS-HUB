@@ -129,6 +129,14 @@ export default function WorksTab({ post }: Props) {
                 sizes="72px"
                 className="object-contain"
               />
+              {img.isPaintTool && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 py-0.5 text-center text-[8px] font-bold tracking-wide"
+                  style={{ background: "rgba(10,10,11,0.75)", color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
+                >
+                  PAINT/TOOL
+                </span>
+              )}
             </button>
           ))}
         </div>
