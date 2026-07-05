@@ -176,8 +176,13 @@ function AvatarDropdown({ onClose }: { onClose: () => void }) {
 const BUG_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1994qmHZeqy6zayD5TQ8CoRe0w9Z6-5BeUp1cKziU4_Fohw/viewform";
 
 function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: string }) {
+  const { user, loading } = useAuth();
+  const { unreadCount } = useNotifications();
+  const [notifOpen, setNotifOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isJa = locale === "ja";
+
+  const closeNotif = useCallback(() => setNotifOpen(false), []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -193,6 +198,27 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
       className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden shadow-2xl z-[100]"
       style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
     >
+      {!loading && user && (
+        <div className="relative">
+          <button
+            onClick={() => setNotifOpen((v) => !v)}
+            className="flex items-center gap-2 w-full px-4 py-3 text-sm transition-colors hover:opacity-80 text-left"
+            style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+          >
+            <Bell size={14} />
+            {isJa ? "通知" : "Notifications"}
+            {unreadCount > 0 && (
+              <span
+                className="ml-auto min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
+                style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+          {notifOpen && <NotificationDropdown onClose={closeNotif} />}
+        </div>
+      )}
       <a
         href={BUG_REPORT_URL}
         target="_blank"
@@ -211,8 +237,10 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
 
 function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
   const { user, openLoginModal, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
   const t = useTranslations("nav");
   const [rankingOpen, setRankingOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const isJa = locale === "ja";
 
   return (
@@ -235,6 +263,29 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
           </button>
           {rankingOpen && <RankingPopup onClose={() => setRankingOpen(false)} locale={locale} />}
         </div>
+
+        {/* Notifications teaser — logged-in only */}
+        {user && (
+          <div className="relative">
+            <button
+              onClick={() => setNotifOpen((v) => !v)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+              style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+            >
+              <Bell size={15} />
+              {isJa ? "通知" : "Notifications"}
+              {unreadCount > 0 && (
+                <span
+                  className="min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
+                  style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+            {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
+          </div>
+        )}
 
         <div className="flex flex-col gap-1">
           <Link
@@ -351,12 +402,10 @@ function HeaderInner() {
   const { locale } = useLocale();
   const t = useTranslations("nav");
 
-  const [notifOpen,    setNotifOpen]    = useState(false);
   const [rankingOpen,  setRankingOpen]  = useState(false);
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const closeNotif    = useCallback(() => setNotifOpen(false),    []);
   const closeRanking  = useCallback(() => setRankingOpen(false),  []);
   const closeMenu     = useCallback(() => setMenuOpen(false),     []);
   const closeMoreMenu = useCallback(() => setMoreMenuOpen(false), []);
@@ -425,29 +474,6 @@ function HeaderInner() {
             </div>
           )}
 
-          {/* Notification bell — logged-in only */}
-          {!loading && user && (
-            <div className="relative">
-              <button
-                onClick={() => setNotifOpen((v) => !v)}
-                aria-label="Notifications"
-                className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <Bell size={18} />
-                {unreadCount > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
-                    style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
-              {notifOpen && <NotificationDropdown onClose={closeNotif} />}
-            </div>
-          )}
-
           {/* Sign in always visible; avatar once auth resolves */}
           {!loading && user ? (
             <ProfileAvatarButton user={user} />
@@ -465,7 +491,7 @@ function HeaderInner() {
             </button>
           )}
 
-          {/* More menu — bug report, etc. */}
+          {/* More menu — notifications, bug report, etc. */}
           <div className="relative">
             <button
               onClick={() => setMoreMenuOpen((v) => !v)}
@@ -474,6 +500,14 @@ function HeaderInner() {
               style={{ color: "var(--text-secondary)" }}
             >
               <Menu size={18} />
+              {!loading && user && unreadCount > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
+                  style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
             {moreMenuOpen && <MoreMenuDropdown onClose={closeMoreMenu} locale={locale} />}
           </div>
