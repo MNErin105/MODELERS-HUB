@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense, useState, useRef, useEffect, useCallback } from "react";
-import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy } from "lucide-react";
+import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy, Bug } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
 import UserAvatar from "@/components/ui/UserAvatar";
@@ -171,6 +171,42 @@ function AvatarDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── More menu (bug report, etc.) ──────────────────────────────────────────────
+
+const BUG_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1994qmHZeqy6zayD5TQ8CoRe0w9Z6-5BeUp1cKziU4_Fohw/viewform";
+
+function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isJa = locale === "ja";
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden shadow-2xl z-[100]"
+      style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
+    >
+      <a
+        href={BUG_REPORT_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClose}
+        className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        <Bug size={14} /> {isJa ? "バグ報告" : "Report a Bug"}
+      </a>
+    </div>
+  );
+}
+
 // ── Mobile menu ───────────────────────────────────────────────────────────────
 
 function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
@@ -209,6 +245,15 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
           >
             <PlusSquare size={15} /> {t("newPost")}
           </Link>
+          <a
+            href={BUG_REPORT_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 text-sm w-fit hover:opacity-80 transition-opacity"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <Bug size={14} /> {isJa ? "バグ報告" : "Report a Bug"}
+          </a>
         </div>
 
         <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
@@ -306,13 +351,15 @@ function HeaderInner() {
   const { locale } = useLocale();
   const t = useTranslations("nav");
 
-  const [notifOpen,   setNotifOpen]   = useState(false);
-  const [rankingOpen, setRankingOpen] = useState(false);
-  const [menuOpen,    setMenuOpen]    = useState(false);
+  const [notifOpen,    setNotifOpen]    = useState(false);
+  const [rankingOpen,  setRankingOpen]  = useState(false);
+  const [menuOpen,     setMenuOpen]     = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const closeNotif   = useCallback(() => setNotifOpen(false),   []);
-  const closeRanking = useCallback(() => setRankingOpen(false), []);
-  const closeMenu    = useCallback(() => setMenuOpen(false),    []);
+  const closeNotif    = useCallback(() => setNotifOpen(false),    []);
+  const closeRanking  = useCallback(() => setRankingOpen(false),  []);
+  const closeMenu     = useCallback(() => setMenuOpen(false),     []);
+  const closeMoreMenu = useCallback(() => setMoreMenuOpen(false), []);
 
   return (
     <header
@@ -417,6 +464,19 @@ function HeaderInner() {
               {AUTH_LABELS.signIn}
             </button>
           )}
+
+          {/* More menu — bug report, etc. */}
+          <div className="relative">
+            <button
+              onClick={() => setMoreMenuOpen((v) => !v)}
+              aria-label="More"
+              className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <Menu size={18} />
+            </button>
+            {moreMenuOpen && <MoreMenuDropdown onClose={closeMoreMenu} locale={locale} />}
+          </div>
 
           {/* Locale toggle — mobile only, always visible */}
           <div className="flex md:hidden">
