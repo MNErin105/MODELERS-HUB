@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Post, Author, WorkPhoto, BuildStep, Comment, Category } from "@/lib/types";
+import type { Post, Author, WorkPhoto, BuildStep, BuildStepImage, Comment, Category } from "@/lib/types";
 
 // ── Category mapping ──────────────────────────────────────────────────────────
 
@@ -31,6 +31,16 @@ type RawLike      = { user_id: string; created_at: string };
 type RawBookmark  = { user_id: string };
 type RawImage     = { image_url: string; caption: string | null; author_comment: string | null; sort_order: number };
 type RawPaintToolImage = { image_url: string; caption: string | null; sort_order: number };
+type RawJournalImage = { image_url: string; caption: string | null; sort_order: number };
+type RawJournalEntry = {
+  id: string;
+  title: string | null;
+  content: string | null;
+  image_url: string | null;
+  sort_order: number;
+  created_at: string;
+  build_journal_entry_images: RawJournalImage[];
+};
 type RawTag       = { tags: { name: string } | null };
 type RawPaint     = { paint_name: string };
 type RawTool      = { tool_name: string };
@@ -172,18 +182,28 @@ export async function getPostById(id: string): Promise<{ post: Post | null; buil
 
   const { data: journalData } = await supabase
     .from("build_journal_entries")
-    .select("id, title, content, image_url, sort_order, created_at")
+    .select("id, title, content, image_url, sort_order, created_at, build_journal_entry_images (image_url, caption, sort_order)")
     .eq("post_id", id)
     .order("sort_order", { ascending: true });
 
-  const buildSteps: BuildStep[] = (journalData ?? []).map((entry, i) => ({
-    id:          entry.id as string,
-    stepNumber:  i + 1,
-    title:       (entry.title as string | null) ?? "",
-    description: (entry.content as string | null) ?? "",
-    date:        (entry.created_at as string).split("T")[0],
-    images:      entry.image_url ? [{ url: entry.image_url as string, caption: "" }] : [],
-  }));
+  const buildSteps: BuildStep[] = ((journalData ?? []) as unknown as RawJournalEntry[]).map((entry, i) => {
+    const childImages: BuildStepImage[] = [...(entry.build_journal_entry_images ?? [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((img) => ({ url: img.image_url, caption: img.caption ?? "" }));
+
+    const images: BuildStepImage[] = childImages.length > 0
+      ? childImages
+      : entry.image_url ? [{ url: entry.image_url, caption: "" }] : [];
+
+    return {
+      id:          entry.id,
+      stepNumber:  i + 1,
+      title:       entry.title ?? "",
+      description: entry.content ?? "",
+      date:        entry.created_at.split("T")[0],
+      images,
+    };
+  });
 
   return { post: rawToPost(postData as unknown as RawPost), buildSteps };
 }

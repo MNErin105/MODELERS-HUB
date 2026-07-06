@@ -283,6 +283,7 @@ export default function EditPostForm({ post }: { post: Post }) {
       // 1. Collect all storage paths: cover images + build journal images
       const coverUrls = post.images.map((img) => img.url);
 
+      // Legacy single image_url column (entries created before build_journal_entry_images existed)
       const { data: journalRows } = await supabase
         .from("build_journal_entries")
         .select("image_url")
@@ -293,7 +294,17 @@ export default function EditPostForm({ post }: { post: Post }) {
         .map((r) => r.image_url as string)
         .filter(Boolean);
 
-      const storagePaths = [...coverUrls, ...journalUrls]
+      // Per-image rows (current storage location for journal photos)
+      const { data: journalImageRows } = await supabase
+        .from("build_journal_entry_images")
+        .select("image_url, build_journal_entries!inner(post_id)")
+        .eq("build_journal_entries.post_id", postId);
+
+      const journalImageUrls = (journalImageRows ?? [])
+        .map((r) => r.image_url as string)
+        .filter(Boolean);
+
+      const storagePaths = [...coverUrls, ...journalUrls, ...journalImageUrls]
         .map(storagePathFromUrl)
         .filter((p): p is string => !!p);
 

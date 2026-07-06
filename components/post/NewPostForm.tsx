@@ -342,31 +342,45 @@ export default function NewPostForm() {
         const validSteps = wipSteps.filter((s) => s.title.trim());
         for (let i = 0; i < validSteps.length; i++) {
           const step = validSteps[i];
-          let stepImageUrl: string | null = null;
 
-          // Upload the first WIP image for this step
-          const firstImg = step.images[0];
-          if (firstImg) {
-            const wipStored = wipFileMap.current.get(firstImg.id);
-            if (wipStored) {
-              const wipPath = `${user.id}/${postId}-wip-${i}.${wipStored.ext}`;
-              const { error: wipErr } = await supabase.storage
-                .from("post-images")
-                .upload(wipPath, wipStored.buffer, { contentType: wipStored.contentType, upsert: false });
-              if (!wipErr) {
-                const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
-                stepImageUrl = wipUrlData.publicUrl;
-              }
-            }
+          const { data: entryRow, error: entryError } = await supabase
+            .from("build_journal_entries")
+            .insert({
+              post_id:    postId,
+              title:      step.title.trim(),
+              content:    step.description.trim() || null,
+              sort_order: i,
+            })
+            .select("id")
+            .single();
+
+          if (entryError || !entryRow) continue;
+          const entryId = entryRow.id as string;
+
+          // Upload every WIP image for this step
+          const uploaded: { url: string; caption: string }[] = [];
+          for (let j = 0; j < step.images.length; j++) {
+            const img    = step.images[j];
+            const stored = wipFileMap.current.get(img.id);
+            if (!stored) continue;
+            const wipPath = `${user.id}/${postId}-wip-${i}-${j}.${stored.ext}`;
+            const { error: wipErr } = await supabase.storage
+              .from("post-images")
+              .upload(wipPath, stored.buffer, { contentType: stored.contentType, upsert: false });
+            if (wipErr) continue;
+            const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
+            uploaded.push({ url: wipUrlData.publicUrl, caption: img.caption.trim() });
           }
 
-          await supabase.from("build_journal_entries").insert({
-            post_id:    postId,
-            title:      step.title.trim(),
-            content:    step.description.trim() || null,
-            image_url:  stepImageUrl,
-            sort_order: i,
-          });
+          if (uploaded.length > 0) {
+            const entryImageRows = uploaded.map((u, j) => ({
+              entry_id:   entryId,
+              image_url:  u.url,
+              caption:    u.caption || null,
+              sort_order: j,
+            }));
+            await supabase.from("build_journal_entry_images").insert(entryImageRows);
+          }
         }
       }
 
