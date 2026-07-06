@@ -17,17 +17,39 @@ type Props = {
   onClose: () => void;
 };
 
-export default function ImageLightbox({ images, initialIndex = 0, onClose }: Props) {
-  const [index, setIndex] = useState(initialIndex);
-  const [show,  setShow]  = useState(false);
-  const [scale, setScale] = useState(1);
+type Point = { x: number; y: number };
 
-  const imgZone    = useRef<HTMLDivElement>(null);
-  const touchX     = useRef(0);
-  const touchY     = useRef(0);
-  const lastTap    = useRef(0);
-  const pinchDist  = useRef(0);
-  const pinchScale = useRef(1);
+function clampScale(v: number) {
+  return Math.min(5, Math.max(1, v));
+}
+
+function clampPosition(pos: Point, scale: number, el: HTMLDivElement | null): Point {
+  if (!el || scale <= 1) return { x: 0, y: 0 };
+  const maxX = (el.clientWidth  * (scale - 1)) / 2;
+  const maxY = (el.clientHeight * (scale - 1)) / 2;
+  return {
+    x: Math.min(maxX, Math.max(-maxX, pos.x)),
+    y: Math.min(maxY, Math.max(-maxY, pos.y)),
+  };
+}
+
+export default function ImageLightbox({ images, initialIndex = 0, onClose }: Props) {
+  const [index,      setIndex]      = useState(initialIndex);
+  const [show,       setShow]       = useState(false);
+  const [scale,      setScale]      = useState(1);
+  const [position,   setPosition]   = useState<Point>({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const imgZone     = useRef<HTMLDivElement>(null);
+  const touchX      = useRef(0);
+  const touchY      = useRef(0);
+  const lastTap     = useRef(0);
+  const pinchDist   = useRef(0);
+  const pinchScale  = useRef(1);
+  const dragStart   = useRef<Point>({ x: 0, y: 0 });
+  const posStart    = useRef<Point>({ x: 0, y: 0 });
+  const dragMoved   = useRef(false);
+  const suppressClick = useRef(false);
 
   // Fade in
   useEffect(() => { requestAnimationFrame(() => setShow(true)); }, []);
@@ -43,7 +65,7 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
     setTimeout(onClose, 200);
   }, [onClose]);
 
-  const jump = (i: number) => { setIndex(i); setScale(1); };
+  const jump = (i: number) => { setIndex(i); setScale(1); setPosition({ x: 0, y: 0 }); };
   const prev = useCallback(() => jump((index - 1 + images.length) % images.length), [index, images.length]);
   const next = useCallback(() => jump((index + 1) % images.length), [index, images.length]);
 
@@ -67,13 +89,59 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
     return () => el.removeEventListener("touchmove", block);
   }, []);
 
+  // Wheel zoom (desktop) — non-passive so we can preventDefault
+  useEffect(() => {
+    const el = imgZone.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setScale((s) => {
+        const next = clampScale(s - e.deltaY * 0.01);
+        setPosition((p) => (next <= 1 ? { x: 0, y: 0 } : clampPosition(p, next, el)));
+        return next;
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
+  // Mouse drag panning (desktop) — listen on window so drags don't break
+  // when the cursor leaves the image zone mid-drag.
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e: MouseEvent) => {
+      dragMoved.current = true;
+      const dx = e.clientX - dragStart.current.x;
+      const dy = e.clientY - dragStart.current.y;
+      setPosition(clampPosition(
+        { x: posStart.current.x + dx, y: posStart.current.y + dy },
+        scale,
+        imgZone.current,
+      ));
+    };
+    const onUp = () => setIsDragging(false);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isDragging, scale]);
+
   const onTouchStart = (e: React.TouchEvent) => {
+    // Any touch interaction is followed by a ghost "click" event on most
+    // mobile browsers — suppress it so it doesn't re-trigger the desktop
+    // click-to-zoom toggle right after a tap/drag/pinch.
+    suppressClick.current = true;
+
     if (e.touches.length === 1) {
       touchX.current = e.touches[0].clientX;
       touchY.current = e.touches[0].clientY;
+      posStart.current = position;
       const now = Date.now();
       if (now - lastTap.current < 280) {
         setScale(s => (s > 1 ? 1 : 2.5));
+        setPosition({ x: 0, y: 0 });
         lastTap.current = 0;
       } else {
         lastTap.current = now;
@@ -89,17 +157,49 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
     if (e.touches.length === 2) {
       const [a, b] = [e.touches[0], e.touches[1]];
       const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-      setScale(Math.min(5, Math.max(1, pinchScale.current * (d / pinchDist.current))));
+      const next = clampScale(pinchScale.current * (d / pinchDist.current));
+      setScale(next);
+      setPosition((p) => clampPosition(p, next, imgZone.current));
+    } else if (e.touches.length === 1 && scale > 1) {
+      const dx = e.touches[0].clientX - touchX.current;
+      const dy = e.touches[0].clientY - touchY.current;
+      setPosition(clampPosition(
+        { x: posStart.current.x + dx, y: posStart.current.y + dy },
+        scale,
+        imgZone.current,
+      ));
     }
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
+    setTimeout(() => { suppressClick.current = false; }, 350);
     if (scale > 1.05 || images.length <= 1 || e.changedTouches.length !== 1) return;
     const dx = e.changedTouches[0].clientX - touchX.current;
     const dy = e.changedTouches[0].clientY - touchY.current;
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
       dx < 0 ? next() : prev();
     }
+  };
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    posStart.current  = position;
+    dragMoved.current = false;
+    setIsDragging(true);
+  };
+
+  const onImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (suppressClick.current || dragMoved.current) {
+      dragMoved.current = false;
+      return;
+    }
+    setScale((s) => {
+      const next = s > 1 ? 1 : 2.5;
+      setPosition({ x: 0, y: 0 });
+      return next;
+    });
   };
 
   const img = images[index];
@@ -156,14 +256,15 @@ export default function ImageLightbox({ images, initialIndex = 0, onClose }: Pro
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={onMouseDown}
+        onClick={onImageClick}
         style={{
           flex: "1 1 0",
           minHeight: 0,
           position: "relative",
-          transform: `scale(${scale})`,
+          transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
           transition: scale === 1 ? "transform 0.2s ease" : "none",
-          cursor: scale > 1 ? "grab" : "zoom-in",
+          cursor: isDragging ? "grabbing" : scale > 1 ? "grab" : "zoom-in",
         }}
       >
         <Image
