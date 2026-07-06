@@ -197,7 +197,7 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden shadow-2xl z-[100]"
+      className="absolute right-0 top-full mt-2 w-56 rounded-xl shadow-2xl z-[100]"
       style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
     >
       {!loading && user && (
