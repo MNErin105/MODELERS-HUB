@@ -291,28 +291,26 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
           {rankingOpen && <RankingPopup onClose={() => setRankingOpen(false)} locale={locale} />}
         </div>
 
-        {/* Notifications teaser — logged-in only */}
-        {user && (
-          <div className="relative">
-            <button
-              onClick={() => setNotifOpen((v) => !v)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-              style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
-            >
-              <Bell size={15} />
-              {isJa ? "通知" : "Notifications"}
-              {unreadCount > 0 && (
-                <span
-                  className="min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
-                  style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
-                >
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </button>
-            {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
-          </div>
-        )}
+        {/* Notifications teaser */}
+        <div className="relative">
+          <button
+            onClick={() => setNotifOpen((v) => !v)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            <Bell size={15} />
+            {isJa ? "通知" : "Notifications"}
+            {unreadCount > 0 && (
+              <span
+                className="min-w-[16px] h-4 rounded-full text-xs flex items-center justify-center font-bold px-1"
+                style={{ background: "var(--color-like)", color: "#fff", fontSize: "10px" }}
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+          {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
+        </div>
 
         {/* Bug report */}
         <div className="relative">
