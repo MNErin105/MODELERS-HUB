@@ -247,7 +247,7 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
 // ── Mobile menu ───────────────────────────────────────────────────────────────
 
 function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
-  const { user, openLoginModal, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const t = useTranslations("nav");
   const [rankingOpen, setRankingOpen] = useState(false);
@@ -298,28 +298,33 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
           </div>
         )}
 
-        <div className="flex flex-col gap-1">
+        {/* New post */}
+        <div className="relative">
           <Link
             href="/posts/new"
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold w-fit"
-            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
           >
             <PlusSquare size={15} /> {t("newPost")}
           </Link>
+        </div>
+
+        {/* Bug report */}
+        <div className="relative">
           <a
             href={BUG_REPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 text-sm w-fit hover:opacity-80 transition-opacity"
-            style={{ color: "var(--text-muted)" }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
           >
-            <Bug size={14} /> {isJa ? "バグ報告" : "Report a Bug"}
+            <Bug size={15} /> {isJa ? "バグ報告" : "Report a Bug"}
           </a>
         </div>
 
-        <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
-          {user ? (
+        {user && (
+          <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative w-8 h-8 rounded-full overflow-hidden" style={{ border: "2px solid var(--accent-muted)" }}>
@@ -340,19 +345,8 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
                 <LogOut size={14} /> {AUTH_LABELS.signOut}
               </button>
             </div>
-          ) : (
-            <button
-              onClick={() => { openLoginModal(); onClose(); }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-              style={{ background: "var(--bg-tertiary)", color: "var(--text-primary)", border: "1px solid var(--border-subtle)" }}
-            >
-              {AUTH_LABELS.signIn}
-            </button>
-          )}
-          <div className="mt-3">
-            <LocaleToggle />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -465,7 +459,7 @@ function HeaderInner() {
                 className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
                 style={{ color: "var(--text-secondary)" }}
               >
-                <Trophy size={18} />
+                <Trophy size={18} style={{ color: "#f59e0b" }} />
               </button>
               {rankingOpen && <RankingPopup onClose={closeRanking} locale={locale} />}
             </div>
