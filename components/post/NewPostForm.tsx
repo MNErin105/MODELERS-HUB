@@ -339,7 +339,9 @@ export default function NewPostForm() {
 
       // 8. WIP journal entries
       if (hasWIP) {
-        const validSteps = wipSteps.filter((s) => s.title.trim());
+        const validSteps = wipSteps.filter((s) =>
+          s.title.trim() || s.description.trim() || s.images.length > 0
+        );
         for (let i = 0; i < validSteps.length; i++) {
           const step = validSteps[i];
 
@@ -354,7 +356,10 @@ export default function NewPostForm() {
             .select("id")
             .single();
 
-          if (entryError || !entryRow) continue;
+          if (entryError || !entryRow) {
+            console.error("[NewPostForm] build_journal_entries insert error:", entryError);
+            continue;
+          }
           const entryId = entryRow.id as string;
 
           // Upload every WIP image for this step
@@ -367,7 +372,10 @@ export default function NewPostForm() {
             const { error: wipErr } = await supabase.storage
               .from("post-images")
               .upload(wipPath, stored.buffer, { contentType: stored.contentType, upsert: false });
-            if (wipErr) continue;
+            if (wipErr) {
+              console.error("[NewPostForm] WIP image upload error:", wipErr);
+              continue;
+            }
             const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
             uploaded.push({ url: wipUrlData.publicUrl, caption: img.caption.trim() });
           }
