@@ -456,9 +456,9 @@ function HeaderInner() {
             <LocaleToggle />
           </div>
 
-          {/* Ranking — logged-in only */}
+          {/* Ranking — desktop, logged-in only (mobile has its own teaser in MobileMenu) */}
           {!loading && user && (
-            <div className="relative">
+            <div className="relative hidden md:flex">
               <button
                 onClick={() => setRankingOpen((v) => !v)}
                 aria-label="Ranking"
@@ -488,8 +488,8 @@ function HeaderInner() {
             </button>
           )}
 
-          {/* More menu — notifications, bug report, etc. */}
-          <div className="relative">
+          {/* More menu — desktop only (mobile has its own new-post/notif/bug-report links in MobileMenu) */}
+          <div className="relative hidden md:flex">
             <button
               onClick={() => setMoreMenuOpen((v) => !v)}
               aria-label="More"
