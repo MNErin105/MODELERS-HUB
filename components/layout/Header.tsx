@@ -203,8 +203,8 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
         <Link
           href="/posts/new"
           onClick={onClose}
-          className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
-          style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80"
+          style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
         >
           <PlusSquare size={14} /> {t("newPost")}
         </Link>
@@ -304,7 +304,7 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             href="/posts/new"
             onClick={onClose}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
           >
             <PlusSquare size={15} /> {t("newPost")}
           </Link>
