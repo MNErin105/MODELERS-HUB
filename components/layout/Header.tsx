@@ -178,12 +178,13 @@ const BUG_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1994qmHZeqy6z
 function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: string }) {
   const { user, loading } = useAuth();
   const { unreadCount } = useNotifications();
-  const t = useTranslations("nav");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [rankingOpen, setRankingOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isJa = locale === "ja";
 
-  const closeNotif = useCallback(() => setNotifOpen(false), []);
+  const closeNotif   = useCallback(() => setNotifOpen(false),   []);
+  const closeRanking = useCallback(() => setRankingOpen(false), []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -200,14 +201,17 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
       style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
     >
       {!loading && user && (
-        <Link
-          href="/posts/new"
-          onClick={onClose}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80"
-          style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-        >
-          <PlusSquare size={14} /> {t("newPost")}
-        </Link>
+        <div className="relative">
+          <button
+            onClick={() => setRankingOpen((v) => !v)}
+            className="flex items-center gap-2 w-full px-4 py-3 text-sm transition-colors hover:opacity-80 text-left"
+            style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+          >
+            <Trophy size={14} style={{ color: "#f59e0b" }} />
+            {isJa ? "月間ランキング" : "Monthly Ranking"}
+          </button>
+          {rankingOpen && <RankingPopup onClose={closeRanking} locale={locale} />}
+        </div>
       )}
       {!loading && user && (
         <div className="relative">
@@ -405,12 +409,11 @@ function HeaderInner() {
   const { user, loading, openLoginModal } = useAuth();
   const { unreadCount } = useNotifications();
   const { locale } = useLocale();
+  const t = useTranslations("nav");
 
-  const [rankingOpen,  setRankingOpen]  = useState(false);
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const closeRanking  = useCallback(() => setRankingOpen(false),  []);
   const closeMenu     = useCallback(() => setMenuOpen(false),     []);
   const closeMoreMenu = useCallback(() => setMoreMenuOpen(false), []);
 
@@ -445,25 +448,23 @@ function HeaderInner() {
         {/* Right controls */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
 
+          {/* Post button — desktop, logged-in only */}
+          {!loading && user && (
+            <Link
+              href="/posts/new"
+              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+              style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+              aria-label={t("newPost")}
+            >
+              <PlusSquare size={15} />
+              <span>{t("newPost")}</span>
+            </Link>
+          )}
+
           {/* Locale toggle — desktop, always visible */}
           <div className="hidden md:flex">
             <LocaleToggle />
           </div>
-
-          {/* Ranking — desktop, logged-in only (mobile has its own teaser in MobileMenu) */}
-          {!loading && user && (
-            <div className="relative hidden md:flex">
-              <button
-                onClick={() => setRankingOpen((v) => !v)}
-                aria-label="Ranking"
-                className="relative flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <Trophy size={18} style={{ color: "#f59e0b" }} />
-              </button>
-              {rankingOpen && <RankingPopup onClose={closeRanking} locale={locale} />}
-            </div>
-          )}
 
           {/* Sign in always visible; avatar once auth resolves */}
           {!loading && user ? (
