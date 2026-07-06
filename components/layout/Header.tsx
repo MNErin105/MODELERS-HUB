@@ -178,6 +178,7 @@ const BUG_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1994qmHZeqy6z
 function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: string }) {
   const { user, loading } = useAuth();
   const { unreadCount } = useNotifications();
+  const t = useTranslations("nav");
   const [notifOpen, setNotifOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isJa = locale === "ja";
@@ -198,6 +199,16 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
       className="absolute right-0 top-full mt-2 w-56 rounded-xl overflow-hidden shadow-2xl z-[100]"
       style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
     >
+      {!loading && user && (
+        <Link
+          href="/posts/new"
+          onClick={onClose}
+          className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
+          style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+        >
+          <PlusSquare size={14} /> {t("newPost")}
+        </Link>
+      )}
       {!loading && user && (
         <div className="relative">
           <button
@@ -400,7 +411,6 @@ function HeaderInner() {
   const { user, loading, openLoginModal } = useAuth();
   const { unreadCount } = useNotifications();
   const { locale } = useLocale();
-  const t = useTranslations("nav");
 
   const [rankingOpen,  setRankingOpen]  = useState(false);
   const [menuOpen,     setMenuOpen]     = useState(false);
@@ -440,19 +450,6 @@ function HeaderInner() {
 
         {/* Right controls */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
-
-          {/* Post button — desktop, logged-in only */}
-          {!loading && user && (
-            <Link
-              href="/posts/new"
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-              aria-label={t("newPost")}
-            >
-              <PlusSquare size={15} />
-              <span>{t("newPost")}</span>
-            </Link>
-          )}
 
           {/* Locale toggle — desktop, always visible */}
           <div className="hidden md:flex">
