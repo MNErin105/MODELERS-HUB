@@ -266,6 +266,18 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
       <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col gap-4">
         <SearchBar />
 
+        {/* New post */}
+        <div className="relative">
+          <Link
+            href="/posts/new"
+            onClick={onClose}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+          >
+            <PlusSquare size={15} /> {t("newPost")}
+          </Link>
+        </div>
+
         {/* Ranking teaser */}
         <div className="relative">
           <button
@@ -301,18 +313,6 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
           </div>
         )}
-
-        {/* New post */}
-        <div className="relative">
-          <Link
-            href="/posts/new"
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-          >
-            <PlusSquare size={15} /> {t("newPost")}
-          </Link>
-        </div>
 
         {/* Bug report */}
         <div className="relative">
