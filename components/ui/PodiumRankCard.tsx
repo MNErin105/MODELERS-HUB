@@ -30,7 +30,7 @@ export default function PodiumRankCard({ post, rank, score, size }: Props) {
             alt={post.title}
             fill
             sizes="(max-width: 1024px) 100vw, 60vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
           />
           {/* Gradient overlay */}
           <div
@@ -95,7 +95,7 @@ export default function PodiumRankCard({ post, rank, score, size }: Props) {
           alt={post.title}
           fill
           sizes="(max-width: 640px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+          className="object-contain transition-transform duration-300 group-hover:scale-[1.04]"
         />
         <div
           className="absolute inset-0"
