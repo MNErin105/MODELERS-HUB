@@ -3,10 +3,9 @@
 import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { CATEGORIES, Category, Post } from "@/lib/types";
+import { POSTS_PAGE_SIZE } from "@/lib/constants";
 import WorkGrid from "@/components/ui/WorkGrid";
 import SectionCategoryFilter from "@/components/ui/SectionCategoryFilter";
-
-const PAGE_SIZE = 24;
 
 type Props = { posts: Post[]; categories?: Category[]; onReorderClick?: () => void };
 
@@ -27,9 +26,9 @@ export default function PopularSection({ posts, categories, onReorderClick }: Pr
     setPage(0);
   }
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / POSTS_PAGE_SIZE));
   const safePage   = Math.min(page, totalPages - 1);
-  const pagePosts  = sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pagePosts  = sorted.slice(safePage * POSTS_PAGE_SIZE, (safePage + 1) * POSTS_PAGE_SIZE);
 
   return (
     <section className="w-full py-10 px-6 max-w-[1440px] mx-auto">

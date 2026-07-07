@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { Category, Post, Story } from "@/lib/types";
+import { POSTS_PAGE_SIZE } from "@/lib/constants";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
 import { useCategoryOrder } from "@/lib/hooks/useCategoryOrder";
@@ -113,6 +114,18 @@ export default function HomeContent({ initialPosts }: Props) {
 
   const isFiltered = !!query.trim() || activeCategory !== null;
 
+  // Filtered/search results pagination — same PAGE_SIZE/slice/Prev-Next pattern
+  // as NewArrivalsSection / PopularSection.
+  const [filteredPage, setFilteredPage] = useState(0);
+  useEffect(() => { setFilteredPage(0); }, [activeCategory, query]);
+
+  const filteredTotalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PAGE_SIZE));
+  const safeFilteredPage   = Math.min(filteredPage, filteredTotalPages - 1);
+  const pagedFilteredPosts = filteredPosts.slice(
+    safeFilteredPage * POSTS_PAGE_SIZE,
+    (safeFilteredPage + 1) * POSTS_PAGE_SIZE,
+  );
+
   return (
     <div style={{ background: "var(--bg-primary)" }}>
       {/* Story bar */}
@@ -163,7 +176,44 @@ export default function HomeContent({ initialPosts }: Props) {
               <> in <strong style={{ color: "var(--accent-primary)" }}>{activeCategory}</strong></>
             )}
           </p>
-          <WorkGrid posts={filteredPosts} />
+          <WorkGrid posts={pagedFilteredPosts} />
+
+          {filteredTotalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <button
+                onClick={() => setFilteredPage((p) => Math.max(0, p - 1))}
+                disabled={safeFilteredPage === 0}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-30 hover:opacity-70"
+                style={{
+                  background: "var(--bg-secondary)",
+                  color:      "var(--text-secondary)",
+                  border:     "1px solid var(--border-subtle)",
+                }}
+              >
+                <ChevronLeft size={15} /> Prev
+              </button>
+
+              <span
+                className="text-sm tabular-nums select-none"
+                style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", minWidth: "4rem", textAlign: "center" }}
+              >
+                {safeFilteredPage + 1} / {filteredTotalPages}
+              </span>
+
+              <button
+                onClick={() => setFilteredPage((p) => Math.min(filteredTotalPages - 1, p + 1))}
+                disabled={safeFilteredPage === filteredTotalPages - 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-30 hover:opacity-70"
+                style={{
+                  background: "var(--bg-secondary)",
+                  color:      "var(--text-secondary)",
+                  border:     "1px solid var(--border-subtle)",
+                }}
+              >
+                Next <ChevronRight size={15} />
+              </button>
+            </div>
+          )}
         </section>
       ) : posts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-32 gap-4">

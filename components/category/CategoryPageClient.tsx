@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Post, Category, CATEGORIES, CATEGORY_META, categorySlug } from "@/lib/types";
+import { POSTS_PAGE_SIZE } from "@/lib/constants";
 import WorkGrid from "@/components/ui/WorkGrid";
 import WeeklyRankingSection from "@/components/sections/WeeklyRankingSection";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
   category: Category;
@@ -19,6 +21,16 @@ export default function CategoryPageClient({ category, categoryPosts, allPosts }
   const catName = tc(`names.${catKey}`);
   const catDesc = tc(`descriptions.${catKey}`);
   const meta = CATEGORY_META[category];
+
+  const sortedCategoryPosts = [...categoryPosts].sort((a, b) => b.saveCount - a.saveCount);
+
+  // Same PAGE_SIZE/slice/Prev-Next pattern as NewArrivalsSection / PopularSection.
+  // No page-reset effect needed: switching category navigates to a new route
+  // (see the category filter pills below), which remounts this component.
+  const [page, setPage] = useState(0);
+  const totalPages = Math.max(1, Math.ceil(sortedCategoryPosts.length / POSTS_PAGE_SIZE));
+  const safePage   = Math.min(page, totalPages - 1);
+  const pagePosts  = sortedCategoryPosts.slice(safePage * POSTS_PAGE_SIZE, (safePage + 1) * POSTS_PAGE_SIZE);
 
   return (
     <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
@@ -101,10 +113,44 @@ export default function CategoryPageClient({ category, categoryPosts, allPosts }
           >
             {tc("allWorksTitle", { category: catName.toUpperCase() })}
           </h2>
-          <WorkGrid
-            posts={[...categoryPosts].sort((a, b) => b.saveCount - a.saveCount)}
-            emptyMessage={tc("noWorks")}
-          />
+          <WorkGrid posts={pagePosts} emptyMessage={tc("noWorks")} />
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-8">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={safePage === 0}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-30 hover:opacity-70"
+                style={{
+                  background: "var(--bg-secondary)",
+                  color:      "var(--text-secondary)",
+                  border:     "1px solid var(--border-subtle)",
+                }}
+              >
+                <ChevronLeft size={15} /> Prev
+              </button>
+
+              <span
+                className="text-sm tabular-nums select-none"
+                style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", minWidth: "4rem", textAlign: "center" }}
+              >
+                {safePage + 1} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={safePage === totalPages - 1}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-30 hover:opacity-70"
+                style={{
+                  background: "var(--bg-secondary)",
+                  color:      "var(--text-secondary)",
+                  border:     "1px solid var(--border-subtle)",
+                }}
+              >
+                Next <ChevronRight size={15} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
