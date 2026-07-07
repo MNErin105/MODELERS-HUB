@@ -387,7 +387,7 @@ function RankingPopup({ onClose, locale }: { onClose: () => void; locale: string
         </button>
       </div>
       <div className="px-4 py-5 text-center">
-        <Trophy size={32} className="mx-auto mb-3" style={{ color: "#f59e0b", opacity: 0.5 }} />
+        <Trophy size={32} className="mx-auto mb-3" style={{ color: "#f59e0b" }} />
         <p className="text-sm font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
           MODELERS HUB {isJa ? "月間ランキング" : "Monthly Ranking"}
         </p>
