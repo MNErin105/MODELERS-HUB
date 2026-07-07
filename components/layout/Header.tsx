@@ -85,15 +85,20 @@ function NotificationDropdown({ onClose }: { onClose: () => void }) {
         <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
           {t("title")}
         </span>
-        {unreadCount > 0 && (
-          <button
-            onClick={markAllRead}
-            className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
-            style={{ color: "var(--accent-primary)" }}
-          >
-            <CheckCheck size={12} /> {t("markAllRead")}
+        <div className="flex items-center gap-3">
+          {unreadCount > 0 && (
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
+              style={{ color: "var(--accent-primary)" }}
+            >
+              <CheckCheck size={12} /> {t("markAllRead")}
+            </button>
+          )}
+          <button onClick={onClose} className="hover:opacity-70 transition-opacity" style={{ color: "var(--text-muted)" }}>
+            <X size={14} />
           </button>
-        )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
