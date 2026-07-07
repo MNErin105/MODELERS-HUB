@@ -154,8 +154,20 @@ export default function AllCategoryRankings({ posts }: Props) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
-            {/* 1st place — full width */}
+          // Podium: 2nd | 1st | 3rd, center column slightly wider, bottom-aligned
+          // so the 1st-place card visually "stands taller".
+          <div
+            className="grid items-end gap-2 sm:gap-4"
+            style={{ gridTemplateColumns: "1fr 1.15fr 1fr" }}
+          >
+            {second && (
+              <PodiumRankCard
+                post={second}
+                rank={1}
+                score={scorePost(second, { period: activePeriod, metric: "likes" })}
+                size="small"
+              />
+            )}
             {first && (
               <PodiumRankCard
                 post={first}
@@ -164,26 +176,14 @@ export default function AllCategoryRankings({ posts }: Props) {
                 size="large"
               />
             )}
-
-            {/* 2nd & 3rd — side by side */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {second && (
-                <PodiumRankCard
-                  post={second}
-                  rank={1}
-                  score={scorePost(second, { period: activePeriod, metric: "likes" })}
-                  size="small"
-                />
-              )}
-              {third && (
-                <PodiumRankCard
-                  post={third}
-                  rank={2}
-                  score={scorePost(third, { period: activePeriod, metric: "likes" })}
-                  size="small"
-                />
-              )}
-            </div>
+            {third && (
+              <PodiumRankCard
+                post={third}
+                rank={2}
+                score={scorePost(third, { period: activePeriod, metric: "likes" })}
+                size="small"
+              />
+            )}
           </div>
         )}
       </div>
