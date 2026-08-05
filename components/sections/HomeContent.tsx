@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { Category, Post, Story } from "@/lib/types";
-import { POSTS_PAGE_SIZE } from "@/lib/constants";
+import { POSTS_PAGE_SIZE, STORIES_ENABLED } from "@/lib/constants";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
 import { useCategoryOrder } from "@/lib/hooks/useCategoryOrder";
@@ -128,12 +128,14 @@ export default function HomeContent({ initialPosts }: Props) {
 
   return (
     <div style={{ background: "var(--bg-primary)" }}>
-      {/* Story bar */}
-      <StoryBar
-        refreshKey={storyRefreshKey}
-        onStoryClick={(stories, startIndex) => { setViewerStories(stories); setViewerStart(startIndex); }}
-        onAddStory={() => setShowCreateModal(true)}
-      />
+      {/* Story bar — feature-flagged off for now (see lib/constants.ts) */}
+      {STORIES_ENABLED && (
+        <StoryBar
+          refreshKey={storyRefreshKey}
+          onStoryClick={(stories, startIndex) => { setViewerStories(stories); setViewerStart(startIndex); }}
+          onAddStory={() => setShowCreateModal(true)}
+        />
+      )}
 
       {/* Category filter */}
       <div className="py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
@@ -248,8 +250,8 @@ export default function HomeContent({ initialPosts }: Props) {
         />
       )}
 
-      {/* Story Viewer */}
-      {viewerStories && (
+      {/* Story Viewer — feature-flagged off for now (see lib/constants.ts) */}
+      {STORIES_ENABLED && viewerStories && (
         <StoryViewer
           stories={viewerStories}
           startIndex={viewerStart}
@@ -265,8 +267,8 @@ export default function HomeContent({ initialPosts }: Props) {
         />
       )}
 
-      {/* Story Create Modal */}
-      {showCreateModal && (
+      {/* Story Create Modal — feature-flagged off for now (see lib/constants.ts) */}
+      {STORIES_ENABLED && showCreateModal && (
         <StoryCreateModal
           onClose={() => setShowCreateModal(false)}
           onCreated={() => {
