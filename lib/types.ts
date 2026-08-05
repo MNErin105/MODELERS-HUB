@@ -152,3 +152,14 @@ export type Tag = {
   count: number;
 };
 
+export type PostLog = {
+  id: string;
+  content: string;
+  imageUrl: string | null;
+  linkedPost: { id: string; title: string; thumbnailUrl: string } | null;
+  author: Author;
+  likeCount: number;
+  createdAt: string;
+  updatedAt: string | null;
+};
+

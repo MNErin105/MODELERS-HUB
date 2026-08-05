@@ -5,17 +5,19 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth, authUserToAuthor } from "@/lib/context/AuthContext";
 import { getPostsByUserId, getPostsByIds } from "@/lib/supabase/queries";
+import { getPostLogsByUserId } from "@/lib/supabase/postLogsQueries";
 import { fetchPinnedPostIds, addPin, removePin } from "@/lib/pins";
 import { getFeaturedData } from "@/lib/featured";
 import { useApp } from "@/lib/context/AppContext";
 import ProfilePageClient from "./ProfilePageClient";
-import type { Post } from "@/lib/types";
+import type { Post, PostLog } from "@/lib/types";
 
 export default function DynamicProfilePage() {
   const router = useRouter();
   const { user, loading, signOut, updateAvatar } = useAuth();
   const { likedIds, savedIds } = useApp();
   const [ownPosts,      setOwnPosts]      = useState<Post[]>([]);
+  const [postLogs,      setPostLogs]      = useState<PostLog[]>([]);
   const [likedPosts,    setLikedPosts]    = useState<Post[]>([]);
   const [savedPosts,    setSavedPosts]    = useState<Post[]>([]);
   const [postsLoading,  setPostsLoading]  = useState(true);
@@ -52,15 +54,17 @@ export default function DynamicProfilePage() {
         setTimeout(() => reject(new Error("posts fetch timeout")), 5000)
       );
       try {
-        const [owned, pinIds] = await Promise.race([
+        const [owned, pinIds, logs] = await Promise.race([
           Promise.all([
             getPostsByUserId(user.id),
             fetchPinnedPostIds(user.id),
+            getPostLogsByUserId(user.id),
           ]),
           timeout,
         ]);
         setOwnPosts(owned);
         setPinnedPostIds(pinIds);
+        setPostLogs(logs);
       } catch (err) {
         console.error("[DynamicProfilePage] posts fetch failed or timed out:", err);
       } finally {
@@ -142,6 +146,7 @@ export default function DynamicProfilePage() {
     <ProfilePageClient
       author={author}
       authorPosts={ownPosts}
+      postLogs={postLogs}
       totalLikes={totalLikes}
       totalSaves={totalSaves}
       isOwnProfile

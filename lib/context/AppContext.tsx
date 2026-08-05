@@ -7,24 +7,29 @@ type AppState = {
   likedIds:    Set<string>;
   savedIds:    Set<string>;
   followedIds: Set<string>;
-  toggleLike:   (postId: string) => Promise<void>;
-  toggleSave:   (postId: string) => Promise<void>;
-  toggleFollow: (authorId: string) => Promise<void>;
+  likedLogIds: Set<string>;
+  toggleLike:    (postId: string) => Promise<void>;
+  toggleSave:    (postId: string) => Promise<void>;
+  toggleFollow:  (authorId: string) => Promise<void>;
+  toggleLogLike: (postLogId: string) => Promise<void>;
 };
 
 const AppContext = createContext<AppState>({
   likedIds:    new Set(),
   savedIds:    new Set(),
   followedIds: new Set(),
-  toggleLike:   async () => {},
-  toggleSave:   async () => {},
-  toggleFollow: async () => {},
+  likedLogIds: new Set(),
+  toggleLike:    async () => {},
+  toggleSave:    async () => {},
+  toggleFollow:  async () => {},
+  toggleLogLike: async () => {},
 });
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [likedIds,    setLikedIds]    = useState<Set<string>>(new Set());
   const [savedIds,    setSavedIds]    = useState<Set<string>>(new Set());
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+  const [likedLogIds, setLikedLogIds] = useState<Set<string>>(new Set());
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,6 +39,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setLikedIds(new Set());
         setSavedIds(new Set());
         setFollowedIds(new Set());
+        setLikedLogIds(new Set());
         return;
       }
       const uid = session.user.id;
@@ -44,23 +50,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setTimeout(() => reject(new Error("AppContext fetch timeout")), 5000)
       );
       try {
-        const [{ data: likedData }, { data: savedData }, { data: followedData }] =
+        const [{ data: likedData }, { data: savedData }, { data: followedData }, { data: likedLogData }] =
           await Promise.race([
             Promise.all([
               supabase.from("likes").select("post_id").eq("user_id", uid),
               supabase.from("bookmarks").select("post_id").eq("user_id", uid),
               supabase.from("follows").select("following_id").eq("follower_id", uid),
+              supabase.from("post_log_likes").select("post_log_id").eq("user_id", uid),
             ]),
             timeout,
           ]);
         setLikedIds(new Set((likedData ?? []).map((l) => l.post_id as string)));
         setSavedIds(new Set((savedData ?? []).map((b) => b.post_id as string)));
         setFollowedIds(new Set((followedData ?? []).map((f) => f.following_id as string)));
+        setLikedLogIds(new Set((likedLogData ?? []).map((l) => l.post_log_id as string)));
       } catch (err) {
         console.error("[AppContext] likes/bookmarks/follows fetch failed or timed out:", err);
         setLikedIds(new Set());
         setSavedIds(new Set());
         setFollowedIds(new Set());
+        setLikedLogIds(new Set());
       }
     });
 
@@ -113,10 +122,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentUserId, followedIds]);
 
+  const toggleLogLike = useCallback(async (postLogId: string) => {
+    if (!currentUserId) return;
+    const isLiked = likedLogIds.has(postLogId);
+    setLikedLogIds((prev) => {
+      const next = new Set(prev);
+      isLiked ? next.delete(postLogId) : next.add(postLogId);
+      return next;
+    });
+    if (isLiked) {
+      await supabase.from("post_log_likes").delete().match({ post_log_id: postLogId, user_id: currentUserId });
+    } else {
+      await supabase.from("post_log_likes").insert({ post_log_id: postLogId, user_id: currentUserId });
+    }
+  }, [currentUserId, likedLogIds]);
+
   return (
     <AppContext.Provider value={{
-      likedIds, savedIds, followedIds,
-      toggleLike, toggleSave, toggleFollow,
+      likedIds, savedIds, followedIds, likedLogIds,
+      toggleLike, toggleSave, toggleFollow, toggleLogLike,
     }}>
       {children}
     </AppContext.Provider>

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getProfileById, getProfileByUsername, getPostsByUserId, getFollowersCount, getPostsByIds } from "@/lib/supabase/queries";
+import { getPostLogsByUserId } from "@/lib/supabase/postLogsQueries";
 import ProfilePageClient from "@/components/profile/ProfilePageClient";
 import DynamicProfilePage from "@/components/profile/DynamicProfilePage";
 import type { Author } from "@/lib/types";
@@ -19,9 +20,10 @@ export default async function ProfilePage({ params }: Props) {
 
   const profileId = profile.id as string;
 
-  const [authorPosts, followersCount] = await Promise.all([
+  const [authorPosts, followersCount, postLogs] = await Promise.all([
     getPostsByUserId(profileId),
     getFollowersCount(profileId),
+    getPostLogsByUserId(profileId),
   ]);
 
   const featuredPostId     = profile.featured_post_id    as string | null;
@@ -54,6 +56,7 @@ export default async function ProfilePage({ params }: Props) {
     <ProfilePageClient
       author={author}
       authorPosts={authorPosts}
+      postLogs={postLogs}
       totalLikes={totalLikes}
       totalSaves={totalSaves}
       username={profile.username as string}

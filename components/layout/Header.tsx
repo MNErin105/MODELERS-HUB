@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense, useState, useRef, useEffect, useCallback } from "react";
-import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy, Bug } from "lucide-react";
+import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy, Bug, ChevronDown, Rss } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
 import UserAvatar from "@/components/ui/UserAvatar";
@@ -176,6 +176,46 @@ function AvatarDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Post menu (choose between a full work post and a quick post log) ───────────
+
+function PostMenuDropdown({ onClose, locale }: { onClose: () => void; locale: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isJa = locale === "ja";
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-2 w-52 rounded-xl overflow-hidden shadow-2xl z-[100]"
+      style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
+    >
+      <Link
+        href="/posts/new"
+        onClick={onClose}
+        className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80"
+        style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <PlusSquare size={14} /> {isJa ? "作品投稿" : "New Work"}
+      </Link>
+      <Link
+        href="/post-logs/new"
+        onClick={onClose}
+        className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        <Rss size={14} /> {isJa ? "投稿記録" : "Post Log"}
+      </Link>
+    </div>
+  );
+}
+
 // ── More menu (bug report, etc.) ──────────────────────────────────────────────
 
 const BUG_REPORT_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf1994qmHZeqy6zayD5TQ8CoRe0w9Z6-5BeUp1cKziU4_Fohw/viewform";
@@ -239,6 +279,14 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
           {notifOpen && <NotificationDropdown onClose={closeNotif} />}
         </div>
       )}
+      <Link
+        href="/post-logs"
+        onClick={onClose}
+        className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
+        style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <Rss size={14} /> {isJa ? "投稿記録を見る" : "View Post Logs"}
+      </Link>
       <a
         href={BUG_REPORT_URL}
         target="_blank"
@@ -258,7 +306,6 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
 function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const t = useTranslations("nav");
   const [rankingOpen, setRankingOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const isJa = locale === "ja";
@@ -271,7 +318,7 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
       <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col gap-4">
         <SearchBar />
 
-        {/* New post */}
+        {/* New work post */}
         <div className="relative">
           <Link
             href="/posts/new"
@@ -279,7 +326,19 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
             style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
           >
-            <PlusSquare size={15} /> {t("newPost")}
+            <PlusSquare size={15} /> {isJa ? "作品投稿" : "New Work"}
+          </Link>
+        </div>
+
+        {/* New post log */}
+        <div className="relative">
+          <Link
+            href="/post-logs/new"
+            onClick={onClose}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+          >
+            <Rss size={15} /> {isJa ? "投稿記録" : "Post Log"}
           </Link>
         </div>
 
@@ -315,6 +374,18 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             )}
           </button>
           {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
+        </div>
+
+        {/* Post Logs */}
+        <div className="relative">
+          <Link
+            href="/post-logs"
+            onClick={onClose}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
+            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
+          >
+            <Rss size={15} /> {isJa ? "投稿記録を見る" : "View Post Logs"}
+          </Link>
         </div>
 
         {/* Bug report */}
@@ -412,13 +483,15 @@ function HeaderInner() {
   const { user, loading, openLoginModal } = useAuth();
   const { unreadCount } = useNotifications();
   const { locale } = useLocale();
-  const t = useTranslations("nav");
+  const isJa = locale === "ja";
 
   const [menuOpen,     setMenuOpen]     = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [postMenuOpen, setPostMenuOpen] = useState(false);
 
   const closeMenu     = useCallback(() => setMenuOpen(false),     []);
   const closeMoreMenu = useCallback(() => setMoreMenuOpen(false), []);
+  const closePostMenu = useCallback(() => setPostMenuOpen(false), []);
 
   return (
     <header
@@ -451,17 +524,22 @@ function HeaderInner() {
         {/* Right controls */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
 
-          {/* Post button — desktop, logged-in only */}
+          {/* Post button — desktop, logged-in only. Toggles a 2-choice dropdown
+              (new work post vs. quick post log) instead of navigating directly. */}
           {!loading && user && (
-            <Link
-              href="/posts/new"
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-              style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-              aria-label={t("newPost")}
-            >
-              <PlusSquare size={15} />
-              <span>{t("newPost")}</span>
-            </Link>
+            <div className="relative hidden md:flex">
+              <button
+                onClick={() => setPostMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+                aria-label={isJa ? "投稿する" : "Post"}
+              >
+                <PlusSquare size={15} />
+                <span>{isJa ? "投稿する" : "Post"}</span>
+                <ChevronDown size={14} style={{ transform: postMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+              </button>
+              {postMenuOpen && <PostMenuDropdown onClose={closePostMenu} locale={locale} />}
+            </div>
           )}
 
           {/* Locale toggle — desktop, always visible */}

@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Post, Author } from "@/lib/types";
+import { Post, Author, PostLog } from "@/lib/types";
 
 import WorkGrid from "@/components/ui/WorkGrid";
 import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
 import AvatarCropModal from "./AvatarCropModal";
-import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil, PlusSquare } from "lucide-react";
+import PostLogCard from "@/components/post-logs/PostLogCard";
+import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil, PlusSquare, Rss } from "lucide-react";
 
-type Tab = "works" | "wip" | "liked" | "saved";
+type Tab = "works" | "wip" | "logs" | "liked" | "saved";
 
 type Props = {
   author: Author;
@@ -21,6 +22,7 @@ type Props = {
   totalSaves: number;
   isOwnProfile?: boolean;
   username?: string;
+  postLogs?: PostLog[];
   likedPosts?: Post[];
   savedPosts?: Post[];
   featuredThumbnailUrl?: string;
@@ -38,6 +40,7 @@ type Props = {
 export default function ProfilePageClient({
   author, authorPosts, totalLikes, totalSaves,
   isOwnProfile = false, username,
+  postLogs = [],
   likedPosts = [], savedPosts = [],
   featuredThumbnailUrl, featuredPostId, featuredImageUrl,
   onFeaturedChange, onFeaturedImageChange,
@@ -57,7 +60,7 @@ export default function ProfilePageClient({
   const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
   const unpinnedPosts = authorPosts.filter((p) => !pinnedSet.has(p.id));
 
-  const tabPosts: Record<Tab, Post[]> = {
+  const tabPosts: Record<Exclude<Tab, "logs">, Post[]> = {
     works: authorPosts,
     wip:   wipPosts,
     liked: likedPosts,
@@ -67,6 +70,7 @@ export default function ProfilePageClient({
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { key: "works", label: t("tabs.works"), icon: <Layers size={14} />, count: authorPosts.length },
     { key: "wip",   label: t("tabs.wip"),   icon: <Wrench size={14} />, count: wipPosts.length },
+    { key: "logs",  label: "Post Logs",     icon: <Rss    size={14} />, count: postLogs.length },
     ...(isOwnProfile ? [
       { key: "liked" as Tab, label: t("tabs.liked"), icon: <Heart    size={14} />, count: likedPosts.length },
       { key: "saved" as Tab, label: t("tabs.saved"), icon: <Bookmark size={14} />, count: savedPosts.length },
@@ -342,6 +346,16 @@ export default function ProfilePageClient({
               onTogglePin={onTogglePin}
             />
           </>
+        ) : activeTab === "logs" ? (
+          postLogs.length === 0 ? (
+            <p className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
+              No post logs yet.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-4 max-w-2xl">
+              {postLogs.map((log) => <PostLogCard key={log.id} log={log} />)}
+            </div>
+          )
         ) : (
           <WorkGrid posts={tabPosts[activeTab]} />
         )}
