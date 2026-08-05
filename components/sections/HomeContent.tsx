@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Users } from "lucide-react";
 import UserAvatar from "@/components/ui/UserAvatar";
-import { Category, Post, Story } from "@/lib/types";
-import { POSTS_PAGE_SIZE, STORIES_ENABLED } from "@/lib/constants";
+import { Category, Post } from "@/lib/types";
+import { POSTS_PAGE_SIZE } from "@/lib/constants";
 import { useAuth } from "@/lib/context/AuthContext";
 import { searchUsers, UserProfile } from "@/lib/users";
 import { useCategoryOrder } from "@/lib/hooks/useCategoryOrder";
@@ -16,9 +16,6 @@ import AllCategoryRankings from "./AllCategoryRankings";
 import WorkGrid from "@/components/ui/WorkGrid";
 import CategoryFilter from "@/components/ui/CategoryFilter";
 import CategoryOrderModal from "@/components/ui/CategoryOrderModal";
-import StoryBar from "@/components/story/StoryBar";
-import StoryViewer from "@/components/story/StoryViewer";
-import StoryCreateModal from "@/components/story/StoryCreateModal";
 
 // ── People card ───────────────────────────────────────────────────────────────
 
@@ -72,12 +69,6 @@ export default function HomeContent({ initialPosts }: Props) {
   const { order: categoryOrder, saveOrder, resetOrder } = useCategoryOrder();
   const [showOrderModal, setShowOrderModal] = useState(false);
 
-  // Stories state
-  const [storyRefreshKey, setStoryRefreshKey] = useState(0);
-  const [viewerStories, setViewerStories] = useState<Story[] | null>(null);
-  const [viewerStart, setViewerStart] = useState(0);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-
   const selfProfile = useMemo<UserProfile | null>(() => {
     if (!user) return null;
     return {
@@ -128,15 +119,6 @@ export default function HomeContent({ initialPosts }: Props) {
 
   return (
     <div style={{ background: "var(--bg-primary)" }}>
-      {/* Story bar — feature-flagged off for now (see lib/constants.ts) */}
-      {STORIES_ENABLED && (
-        <StoryBar
-          refreshKey={storyRefreshKey}
-          onStoryClick={(stories, startIndex) => { setViewerStories(stories); setViewerStart(startIndex); }}
-          onAddStory={() => setShowCreateModal(true)}
-        />
-      )}
-
       {/* Category filter */}
       <div className="py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
         <CategoryFilter
@@ -247,34 +229,6 @@ export default function HomeContent({ initialPosts }: Props) {
           onSave={saveOrder}
           onReset={resetOrder}
           onClose={() => setShowOrderModal(false)}
-        />
-      )}
-
-      {/* Story Viewer — feature-flagged off for now (see lib/constants.ts) */}
-      {STORIES_ENABLED && viewerStories && (
-        <StoryViewer
-          stories={viewerStories}
-          startIndex={viewerStart}
-          onClose={() => setViewerStories(null)}
-          onDeleted={(id) => {
-            setViewerStories((prev) => {
-              if (!prev) return null;
-              const next = prev.filter((s) => s.id !== id);
-              return next.length > 0 ? next : null;
-            });
-            setStoryRefreshKey((k) => k + 1);
-          }}
-        />
-      )}
-
-      {/* Story Create Modal — feature-flagged off for now (see lib/constants.ts) */}
-      {STORIES_ENABLED && showCreateModal && (
-        <StoryCreateModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => {
-            setShowCreateModal(false);
-            setStoryRefreshKey((k) => k + 1);
-          }}
         />
       )}
     </div>

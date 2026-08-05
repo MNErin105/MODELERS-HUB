@@ -152,17 +152,3 @@ export type Tag = {
   count: number;
 };
 
-export type Story = {
-  id: string;
-  userId: string;
-  imageUrl: string;
-  caption: string | null;
-  createdAt: string;
-  expiresAt: string;
-  author: {
-    id: string;
-    name: string;
-    username: string;
-    avatarUrl: string | null;
-  };
-};
