@@ -3,20 +3,18 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Post, BuildStep } from "@/lib/types";
-import { ChevronLeft, Image as ImageIcon, BookOpen, MessageSquare } from "lucide-react";
+import { Post } from "@/lib/types";
+import { ChevronLeft, Image as ImageIcon, MessageSquare } from "lucide-react";
 import WorksTab from "./WorksTab";
-import BuildJournalTab from "./BuildJournalTab";
 import CommentsTab from "./CommentsTab";
 
-type Tab = "works" | "journal" | "comments";
+type Tab = "works" | "comments";
 
 type Props = {
   post: Post;
-  buildSteps: BuildStep[];
 };
 
-export default function PostDetailClient({ post, buildSteps }: Props) {
+export default function PostDetailClient({ post }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("post");
@@ -24,7 +22,6 @@ export default function PostDetailClient({ post, buildSteps }: Props) {
 
   const TABS: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
     { id: "works",   label: t("tabs.works"),   icon: ImageIcon },
-    { id: "journal", label: t("tabs.journal"),  icon: BookOpen,  count: buildSteps.length },
     { id: "comments", label: t("tabs.comments"), icon: MessageSquare },
   ];
 
@@ -92,7 +89,6 @@ export default function PostDetailClient({ post, buildSteps }: Props) {
       {/* ── Tab content ─────────────────────────────────────────────── */}
       <div className="max-w-[1440px] mx-auto px-6 py-8">
         {activeTab === "works"    && <WorksTab post={post} />}
-        {activeTab === "journal"  && <BuildJournalTab steps={buildSteps} />}
         {activeTab === "comments" && <CommentsTab postId={post.id} />}
       </div>
     </div>

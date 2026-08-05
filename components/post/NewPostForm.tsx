@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Send, AlertCircle, ToggleLeft, ToggleRight } from "lucide-react";
+import { ChevronLeft, Send, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { CATEGORIES, Category } from "@/lib/types";
@@ -14,7 +14,6 @@ import { supabase } from "@/lib/supabase";
 import { CATEGORY_TO_DB } from "@/lib/supabase/queries";
 import ImageUploadZone from "./ImageUploadZone";
 import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
-import WIPStepEditor, { WIPStep } from "./WIPStepEditor";
 import TagInput from "./TagInput";
 import PaintTagInput from "./PaintTagInput";
 
@@ -112,13 +111,6 @@ export default function NewPostForm() {
   const [paintToolImages, setPaintToolImages] = useState<UploadedImage[]>([]);
   const paintToolFileMap = useRef(new Map<string, StoredFile>());
 
-  // WIP
-  const [hasWIP,   setHasWIP]   = useState(false);
-  const [wipSteps, setWipSteps] = useState<WIPStep[]>([
-    { id: uid(), title: "", description: "", images: [] },
-  ]);
-  const wipFileMap = useRef(new Map<string, StoredFile>());
-
   // SNS repost permission (default: allowed)
   const [allowSnsRepost, setAllowSnsRepost] = useState(true);
 
@@ -167,36 +159,6 @@ export default function NewPostForm() {
   }, []);
   const updatePaintToolCaption = useCallback((id: string, cap: string) =>
     setPaintToolImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
-
-  // ── WIP handlers ────────────────────────────────────────────────────────────
-  function addStep() { setWipSteps((p) => [...p, { id: uid(), title: "", description: "", images: [] }]); }
-  function removeStep(id: string) { setWipSteps((p) => p.filter((s) => s.id !== id)); }
-
-  function updateStepField(id: string, field: "title" | "description", value: string) {
-    setWipSteps((p) => p.map((s) => s.id === id ? { ...s, [field]: value } : s));
-  }
-
-  async function addStepImages(stepId: string, files: File[]) {
-    const entries = await Promise.all(
-      files.map(async (file) => {
-        const { previewUrl, stored } = await prepareFile(file);
-        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
-        wipFileMap.current.set(preview.id, stored);
-        return preview;
-      }),
-    );
-    setWipSteps((p) => p.map((s) => {
-      if (s.id !== stepId) return s;
-      return { ...s, images: [...s.images, ...entries].slice(0, 5) };
-    }));
-  }
-
-  function removeStepImage(stepId: string, imgId: string) {
-    wipFileMap.current.delete(imgId);
-    setWipSteps((p) => p.map((s) =>
-      s.id === stepId ? { ...s, images: s.images.filter((i) => i.id !== imgId) } : s
-    ));
-  }
 
   // ── Validation ──────────────────────────────────────────────────────────────
   function validate() {
@@ -335,61 +297,6 @@ export default function NewPostForm() {
         await supabase.from("post_techniques").insert(
           techniques.map((name) => ({ post_id: postId, technique_name: name }))
         );
-      }
-
-      // 8. WIP journal entries
-      if (hasWIP) {
-        const validSteps = wipSteps.filter((s) =>
-          s.title.trim() || s.description.trim() || s.images.length > 0
-        );
-        for (let i = 0; i < validSteps.length; i++) {
-          const step = validSteps[i];
-
-          const { data: entryRow, error: entryError } = await supabase
-            .from("build_journal_entries")
-            .insert({
-              post_id:    postId,
-              title:      step.title.trim(),
-              content:    step.description.trim() || null,
-              sort_order: i,
-            })
-            .select("id")
-            .single();
-
-          if (entryError || !entryRow) {
-            console.error("[NewPostForm] build_journal_entries insert error:", entryError);
-            continue;
-          }
-          const entryId = entryRow.id as string;
-
-          // Upload every WIP image for this step
-          const uploaded: { url: string; caption: string }[] = [];
-          for (let j = 0; j < step.images.length; j++) {
-            const img    = step.images[j];
-            const stored = wipFileMap.current.get(img.id);
-            if (!stored) continue;
-            const wipPath = `${user.id}/${postId}-wip-${i}-${j}.${stored.ext}`;
-            const { error: wipErr } = await supabase.storage
-              .from("post-images")
-              .upload(wipPath, stored.buffer, { contentType: stored.contentType, upsert: false });
-            if (wipErr) {
-              console.error("[NewPostForm] WIP image upload error:", wipErr);
-              continue;
-            }
-            const { data: wipUrlData } = supabase.storage.from("post-images").getPublicUrl(wipPath);
-            uploaded.push({ url: wipUrlData.publicUrl, caption: img.caption.trim() });
-          }
-
-          if (uploaded.length > 0) {
-            const entryImageRows = uploaded.map((u, j) => ({
-              entry_id:   entryId,
-              image_url:  u.url,
-              caption:    u.caption || null,
-              sort_order: j,
-            }));
-            await supabase.from("build_journal_entry_images").insert(entryImageRows);
-          }
-        }
       }
 
       router.push(`/posts/${postId}`);
@@ -557,34 +464,6 @@ export default function NewPostForm() {
               placeholder={t("placeholders.tags")}
               max={15}
             />
-          </Section>
-
-          {/* ── WIP ──────────────────────────────────────────────────────── */}
-          <Section title={t("sections.wip")}>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setHasWIP((v) => !v)}
-                className="flex items-center gap-2 text-sm font-medium transition-colors"
-                style={{ color: hasWIP ? "var(--accent-primary)" : "var(--text-secondary)" }}
-              >
-                {hasWIP
-                  ? <ToggleRight size={22} style={{ color: "var(--accent-primary)" }} />
-                  : <ToggleLeft  size={22} style={{ color: "var(--text-muted)" }} />}
-                {t("wip.toggle")}
-              </button>
-            </div>
-
-            {hasWIP && (
-              <WIPStepEditor
-                steps={wipSteps}
-                onAdd={addStep}
-                onRemove={removeStep}
-                onUpdateField={updateStepField}
-                onAddImages={addStepImages}
-                onRemoveImage={removeStepImage}
-              />
-            )}
           </Section>
 
           {submitError && (

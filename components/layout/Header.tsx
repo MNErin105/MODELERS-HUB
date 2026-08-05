@@ -205,12 +205,12 @@ function PostMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
         <PlusSquare size={14} /> {isJa ? "作品投稿" : "New Work"}
       </Link>
       <Link
-        href="/post-logs/new"
+        href="/build-logs/new"
         onClick={onClose}
         className="flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors hover:opacity-80"
         style={{ color: "var(--text-secondary)" }}
       >
-        <Rss size={14} /> {isJa ? "投稿記録" : "Post Log"}
+        <Rss size={14} /> {isJa ? "制作ログ" : "Build Log"}
       </Link>
     </div>
   );
@@ -280,12 +280,12 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
         </div>
       )}
       <Link
-        href="/post-logs"
+        href="/build-logs"
         onClick={onClose}
         className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
         style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
       >
-        <Rss size={14} /> {isJa ? "投稿記録を見る" : "View Post Logs"}
+        <Rss size={14} /> {isJa ? "制作ログを見る" : "View Build Logs"}
       </Link>
       <a
         href={BUG_REPORT_URL}
@@ -333,12 +333,12 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
         {/* New post log */}
         <div className="relative">
           <Link
-            href="/post-logs/new"
+            href="/build-logs/new"
             onClick={onClose}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
             style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
           >
-            <Rss size={15} /> {isJa ? "投稿記録" : "Post Log"}
+            <Rss size={15} /> {isJa ? "制作ログ" : "Build Log"}
           </Link>
         </div>
 
@@ -376,15 +376,15 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
           {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
         </div>
 
-        {/* Post Logs */}
+        {/* Build Logs */}
         <div className="relative">
           <Link
-            href="/post-logs"
+            href="/build-logs"
             onClick={onClose}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
           >
-            <Rss size={15} /> {isJa ? "投稿記録を見る" : "View Post Logs"}
+            <Rss size={15} /> {isJa ? "制作ログを見る" : "View Build Logs"}
           </Link>
         </div>
 

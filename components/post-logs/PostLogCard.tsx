@@ -54,7 +54,7 @@ export default function PostLogCard({ log }: Props) {
               src={log.imageUrl}
               alt=""
               fill
-              sizes="(max-width: 640px) 100vw, 500px"
+              sizes="(max-width: 767px) 100vw, 420px"
               className="object-cover"
             />
           </div>
@@ -63,15 +63,15 @@ export default function PostLogCard({ log }: Props) {
         {log.linkedPost && (
           <Link
             href={`/posts/${log.linkedPost.id}`}
-            className="flex items-center gap-2 mt-3 p-2 rounded-lg transition-opacity hover:opacity-80"
+            className="flex items-center gap-2 mt-3 pr-3 rounded-lg w-fit max-w-full transition-opacity hover:opacity-80"
             style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)" }}
           >
             {log.linkedPost.thumbnailUrl && (
-              <div className="relative w-10 h-10 rounded overflow-hidden shrink-0">
-                <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="40px" className="object-cover" />
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0">
+                <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="32px" className="object-cover" />
               </div>
             )}
-            <span className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
+            <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
               {log.linkedPost.title}
             </span>
           </Link>

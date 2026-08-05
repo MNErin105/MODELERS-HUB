@@ -1,7 +1,7 @@
 import PostLogComposer from "@/components/post-logs/PostLogComposer";
 
 export const metadata = {
-  title: "New Post Log — Modelers Hub",
+  title: "New Build Log — Modelers Hub",
   description: "Share a quick update with the community.",
 };
 

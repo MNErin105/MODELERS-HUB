@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
-import { PostLog } from "@/lib/types";
+import { Category, PostLog } from "@/lib/types";
 import { StoredFile } from "@/lib/imageUtils";
+import { CATEGORY_TO_DB, DB_TO_CATEGORY } from "@/lib/supabase/queries";
 
 // ── Raw row types ────────────────────────────────────────────────────────────
 
@@ -19,6 +20,7 @@ type RawLinkedPost = { id: string; title: string; post_images: RawImage[] } | nu
 type RawPostLog = {
   id: string;
   content: string;
+  genre: string;
   created_at: string;
   updated_at: string | null;
   profiles: RawProfile | RawProfile[] | null;
@@ -37,6 +39,7 @@ function mapPostLog(raw: RawPostLog): PostLog {
   return {
     id:        raw.id,
     content:   raw.content,
+    genre:     DB_TO_CATEGORY[raw.genre] ?? "Other",
     imageUrl:  sortedImages[0]?.image_url ?? null,
     linkedPost: linked
       ? { id: linked.id, title: linked.title, thumbnailUrl: sortedLinkedImages[0]?.image_url ?? "" }
@@ -58,7 +61,7 @@ function mapPostLog(raw: RawPostLog): PostLog {
 }
 
 const POST_LOG_SELECT = [
-  "id", "content", "created_at", "updated_at",
+  "id", "content", "genre", "created_at", "updated_at",
   "profiles!user_id (id, username, display_name, avatar_url, country, bio)",
   "post_log_images (image_url, sort_order)",
   "post_log_likes (user_id)",
@@ -72,13 +75,18 @@ const POST_LOG_SELECT = [
 export async function getPostLogsFeed(
   page: number,
   pageSize: number,
+  genre?: Category | null,
 ): Promise<{ logs: PostLog[]; totalCount: number }> {
   const from = page * pageSize;
   const to   = from + pageSize - 1;
 
-  const { data, count } = await supabase
+  let query = supabase
     .from("post_logs")
-    .select(POST_LOG_SELECT, { count: "exact" })
+    .select(POST_LOG_SELECT, { count: "exact" });
+
+  if (genre) query = query.eq("genre", CATEGORY_TO_DB[genre] ?? "other");
+
+  const { data, count } = await query
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -107,12 +115,13 @@ export async function getPostLogsByUserId(userId: string): Promise<PostLog[]> {
 export async function createPostLog(
   userId: string,
   content: string,
+  genre: Category,
   linkedPostId: string | null,
   image: { stored: StoredFile } | null,
 ): Promise<PostLog> {
   const { data: row, error } = await supabase
     .from("post_logs")
-    .insert({ user_id: userId, content, linked_post_id: linkedPostId })
+    .insert({ user_id: userId, content, genre: CATEGORY_TO_DB[genre] ?? "other", linked_post_id: linkedPostId })
     .select("id")
     .single();
 

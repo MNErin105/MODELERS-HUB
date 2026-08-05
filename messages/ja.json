@@ -72,7 +72,6 @@
     "edit": "編集",
     "tabs": {
       "works": "作品",
-      "journal": "制作記録",
       "comments": "コメント"
     },
     "comments": {
@@ -102,7 +101,6 @@
     "postsCount": "{count} 件",
     "tabs": {
       "works": "作品",
-      "wip": "WIP",
       "liked": "いいね",
       "saved": "保存済み"
     },
@@ -210,8 +208,7 @@
       "paintTools": "使用した塗料・工具の写真",
       "about": "作品について",
       "materials": "使用素材・テクニック",
-      "tags": "タグ",
-      "wip": "制作過程（オプション）"
+      "tags": "タグ"
     },
     "fields": {
       "title": "タイトル",
@@ -250,14 +247,6 @@
     "image": {
       "cover": "カバー",
       "remove": "削除"
-    },
-    "wip": {
-      "toggle": "制作過程を含める",
-      "addStep": "ステップを追加",
-      "removeStep": "ステップを削除",
-      "stepTitle": "ステップ{n}のタイトル…",
-      "stepDesc": "このステップで行った作業を説明してください…",
-      "addPhotos": "写真を追加（残り{remaining}枚）"
     }
   }
 }

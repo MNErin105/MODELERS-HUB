@@ -72,7 +72,6 @@
     "edit": "Edit",
     "tabs": {
       "works": "Works",
-      "journal": "Build Journal",
       "comments": "Comments"
     },
     "comments": {
@@ -102,7 +101,6 @@
     "postsCount": "{count} posts",
     "tabs": {
       "works": "Works",
-      "wip": "WIP",
       "liked": "Liked",
       "saved": "Saved"
     },
@@ -210,8 +208,7 @@
       "paintTools": "Paints & Tools Used",
       "about": "About the Build",
       "materials": "Materials & Techniques",
-      "tags": "Tags",
-      "wip": "Work in Progress (Optional)"
+      "tags": "Tags"
     },
     "fields": {
       "title": "Title",
@@ -250,14 +247,6 @@
     "image": {
       "cover": "Cover",
       "remove": "Remove image"
-    },
-    "wip": {
-      "toggle": "Include build process steps",
-      "addStep": "Add Step",
-      "removeStep": "Remove step",
-      "stepTitle": "Step {n} title…",
-      "stepDesc": "Describe what you did in this step…",
-      "addPhotos": "Add photos ({remaining} max)"
     }
   }
 }

@@ -11,9 +11,9 @@ import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
 import AvatarCropModal from "./AvatarCropModal";
 import PostLogCard from "@/components/post-logs/PostLogCard";
-import { Camera, ChevronLeft, Layers, Bookmark, Heart, Wrench, LogOut, Loader2, Pencil, PlusSquare, Rss } from "lucide-react";
+import { Camera, ChevronLeft, Layers, Bookmark, Heart, LogOut, Loader2, Pencil, PlusSquare, Rss } from "lucide-react";
 
-type Tab = "works" | "wip" | "logs" | "liked" | "saved";
+type Tab = "works" | "logs" | "liked" | "saved";
 
 type Props = {
   author: Author;
@@ -55,22 +55,19 @@ export default function ProfilePageClient({
   const [cropSrc,   setCropSrc]     = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const wipPosts  = authorPosts.filter((p) => p.buildSteps && p.buildSteps.length > 0);
   const pinnedSet = new Set(pinnedPostIds);
   const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
   const unpinnedPosts = authorPosts.filter((p) => !pinnedSet.has(p.id));
 
   const tabPosts: Record<Exclude<Tab, "logs">, Post[]> = {
     works: authorPosts,
-    wip:   wipPosts,
     liked: likedPosts,
     saved: savedPosts,
   };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { key: "works", label: t("tabs.works"), icon: <Layers size={14} />, count: authorPosts.length },
-    { key: "wip",   label: t("tabs.wip"),   icon: <Wrench size={14} />, count: wipPosts.length },
-    { key: "logs",  label: "Post Logs",     icon: <Rss    size={14} />, count: postLogs.length },
+    { key: "logs",  label: "Build Logs",    icon: <Rss    size={14} />, count: postLogs.length },
     ...(isOwnProfile ? [
       { key: "liked" as Tab, label: t("tabs.liked"), icon: <Heart    size={14} />, count: likedPosts.length },
       { key: "saved" as Tab, label: t("tabs.saved"), icon: <Bookmark size={14} />, count: savedPosts.length },
@@ -349,10 +346,10 @@ export default function ProfilePageClient({
         ) : activeTab === "logs" ? (
           postLogs.length === 0 ? (
             <p className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
-              No post logs yet.
+              No build logs yet.
             </p>
           ) : (
-            <div className="flex flex-col gap-4 max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
               {postLogs.map((log) => <PostLogCard key={log.id} log={log} />)}
             </div>
           )

@@ -17,13 +17,13 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function PostPage({ params }: Props) {
   const { id } = await params;
-  const { post, buildSteps } = await getPostById(id);
+  const { post } = await getPostById(id);
 
   if (!post) return notFound();
 
   return (
     <Suspense>
-      <PostDetailClient post={post} buildSteps={buildSteps} />
+      <PostDetailClient post={post} />
     </Suspense>
   );
 }

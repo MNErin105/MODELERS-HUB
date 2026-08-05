@@ -95,20 +95,6 @@ export type WorkPhoto = {
   isPaintTool?: boolean;
 };
 
-export type BuildStepImage = {
-  url: string;
-  caption: string;
-};
-
-export type BuildStep = {
-  id: string;
-  stepNumber: number;
-  title: string;
-  description: string;
-  images: BuildStepImage[];
-  date: string;
-};
-
 export type CommentReply = {
   id: string;
   author: Author;
@@ -130,7 +116,6 @@ export type Post = {
   description: string;
   thumbnailUrl: string;
   images: WorkPhoto[];
-  buildSteps?: BuildStep[];
   author: Author;
   tags: string[];
   categories: Category[];
@@ -155,6 +140,7 @@ export type Tag = {
 export type PostLog = {
   id: string;
   content: string;
+  genre: Category;
   imageUrl: string | null;
   linkedPost: { id: string; title: string; thumbnailUrl: string } | null;
   author: Author;

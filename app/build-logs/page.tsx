@@ -7,7 +7,7 @@ import PostLogFeedClient from "@/components/post-logs/PostLogFeedClient";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Post Logs — Modelers Hub",
+  title: "Build Logs — Modelers Hub",
   description: "Quick updates from the community.",
 };
 
@@ -24,7 +24,7 @@ export default async function PostLogsPage() {
 
   return (
     <div style={{ background: "var(--bg-primary)", minHeight: "100vh" }}>
-      <div className="max-w-2xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-6 py-8">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-sm mb-6 hover:opacity-80 transition-opacity"
@@ -32,18 +32,6 @@ export default async function PostLogsPage() {
         >
           <ChevronLeft size={16} /> Back
         </Link>
-
-        <div className="flex items-baseline gap-3 mb-8">
-          <h1
-            className="text-3xl font-bold tracking-widest"
-            style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-          >
-            Post Logs
-          </h1>
-          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-            {totalCount.toLocaleString()}
-          </span>
-        </div>
 
         <PostLogFeedClient initialLogs={logs} initialTotalCount={totalCount} />
       </div>

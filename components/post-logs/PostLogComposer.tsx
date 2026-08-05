@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, Send, AlertCircle, X, ImagePlus } from "lucide-react";
 import { useAuth } from "@/lib/context/AuthContext";
 import { prepareFile, StoredFile } from "@/lib/imageUtils";
 import { getPostsByUserId } from "@/lib/supabase/queries";
 import { createPostLog } from "@/lib/supabase/postLogsQueries";
-import { Post } from "@/lib/types";
+import { CATEGORIES, Category, Post } from "@/lib/types";
 
 const CONTENT_MAX = 280;
 
@@ -24,9 +24,11 @@ export default function PostLogComposer() {
   const router = useRouter();
   const locale = useLocale();
   const isJa   = locale === "ja";
+  const tc     = useTranslations("category");
   const { user, openLoginModal } = useAuth();
 
   const [content, setContent] = useState("");
+  const [genre,   setGenre]   = useState<Category | null>(null);
 
   // Image — single file, same prepareFile flow as NewPostForm
   const [imagePreview, setImagePreview] = useState<{ id: string; url: string } | null>(null);
@@ -60,7 +62,7 @@ export default function PostLogComposer() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !content.trim() || submitting) return;
+    if (!user || !content.trim() || !genre || submitting) return;
     setSubmitting(true);
     setError(null);
 
@@ -68,14 +70,15 @@ export default function PostLogComposer() {
       const log = await createPostLog(
         user.id,
         content.trim(),
+        genre,
         linkedPostId,
         imageStored ? { stored: imageStored } : null,
       );
-      router.push(`/post-logs#${log.id}`);
+      router.push(`/build-logs#${log.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       if (message.toLowerCase().includes("post logs per 7-day")) {
-        setError(isJa ? "今週の投稿記録は上限（3件）に達しています" : "You've reached this week's limit of 3 post logs.");
+        setError(isJa ? "今週の制作ログは上限（3件）に達しています" : "You've reached this week's limit of 3 build logs.");
       } else {
         setError(message || (isJa ? "投稿に失敗しました" : "Failed to post."));
       }
@@ -110,7 +113,7 @@ export default function PostLogComposer() {
       <div className="max-w-2xl mx-auto px-6 py-10">
         <div className="mb-8">
           <Link
-            href="/post-logs"
+            href="/build-logs"
             className="inline-flex items-center gap-1.5 text-sm mb-6 hover:opacity-80 transition-opacity"
             style={{ color: "var(--text-secondary)" }}
           >
@@ -120,7 +123,7 @@ export default function PostLogComposer() {
             className="text-3xl font-bold tracking-widest"
             style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
           >
-            {isJa ? "投稿記録" : "Post Log"}
+            {isJa ? "制作ログ" : "Build Log"}
           </h1>
           <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
             {isJa ? "気軽な近況・つぶやきを投稿できます（週3回まで）" : "Share a quick update — up to 3 per week."}
@@ -145,6 +148,36 @@ export default function PostLogComposer() {
               >
                 {isJa ? `残り${remaining}文字` : `${remaining} left`}
               </span>
+            </div>
+          </div>
+
+          {/* ── Genre (required) ────────────────────────────────────── */}
+          <div className="flex flex-col gap-2">
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+            >
+              {isJa ? "ジャンルを選択" : "Select a genre"}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => {
+                const selected = genre === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setGenre(cat)}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all"
+                    style={{
+                      background: selected ? "var(--accent-primary)" : "var(--bg-secondary)",
+                      color:      selected ? "var(--bg-primary)"     : "var(--text-secondary)",
+                      border:     `1px solid ${selected ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                    }}
+                  >
+                    {tc(`names.${cat.replace(/\s+/g, "_")}`)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -225,7 +258,7 @@ export default function PostLogComposer() {
           {/* ── Submit ───────────────────────────────────────────────── */}
           <div className="flex items-center justify-between gap-4 pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
             <Link
-              href="/post-logs"
+              href="/build-logs"
               className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
               style={{ background: "var(--bg-secondary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
             >
@@ -233,7 +266,7 @@ export default function PostLogComposer() {
             </Link>
             <button
               type="submit"
-              disabled={submitting || !content.trim()}
+              disabled={submitting || !content.trim() || !genre}
               className="flex items-center gap-2 px-7 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-40"
               style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
             >

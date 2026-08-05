@@ -280,31 +280,9 @@ export default function EditPostForm({ post }: { post: Post }) {
     try {
       const postId = post.id;
 
-      // 1. Collect all storage paths: cover images + build journal images
+      // 1. Collect storage paths for cover images
       const coverUrls = post.images.map((img) => img.url);
-
-      // Legacy single image_url column (entries created before build_journal_entry_images existed)
-      const { data: journalRows } = await supabase
-        .from("build_journal_entries")
-        .select("image_url")
-        .eq("post_id", postId)
-        .not("image_url", "is", null);
-
-      const journalUrls = (journalRows ?? [])
-        .map((r) => r.image_url as string)
-        .filter(Boolean);
-
-      // Per-image rows (current storage location for journal photos)
-      const { data: journalImageRows } = await supabase
-        .from("build_journal_entry_images")
-        .select("image_url, build_journal_entries!inner(post_id)")
-        .eq("build_journal_entries.post_id", postId);
-
-      const journalImageUrls = (journalImageRows ?? [])
-        .map((r) => r.image_url as string)
-        .filter(Boolean);
-
-      const storagePaths = [...coverUrls, ...journalUrls, ...journalImageUrls]
+      const storagePaths = coverUrls
         .map(storagePathFromUrl)
         .filter((p): p is string => !!p);
 
@@ -314,8 +292,8 @@ export default function EditPostForm({ post }: { post: Post }) {
       }
 
       // 3. Delete the post — all related rows cascade automatically:
-      //    post_images, post_tags, post_paints, build_journal_entries,
-      //    comments, likes, bookmarks all have ON DELETE CASCADE
+      //    post_images, post_tags, post_paints, comments, likes, bookmarks
+      //    all have ON DELETE CASCADE
       const { error: deleteErr } = await supabase
         .from("posts")
         .delete()
