@@ -120,9 +120,9 @@ export default function BuildLogCurationEditor({ postId, curated, onCuratedChang
                 }}
               >
                 <GripVertical size={16} className="cursor-grab shrink-0" style={{ color: "var(--text-muted)" }} />
-                {log.imageUrl && (
+                {log.imageUrls[0] && (
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
-                    <Image src={log.imageUrl} alt="" fill className="object-cover" sizes="40px" />
+                    <Image src={log.imageUrls[0]} alt="" fill className="object-cover" sizes="40px" />
                   </div>
                 )}
                 <p className="flex-1 min-w-0 text-sm truncate" style={{ color: "var(--text-secondary)" }}>
@@ -165,9 +165,9 @@ export default function BuildLogCurationEditor({ postId, curated, onCuratedChang
                 className="flex items-center gap-3 p-3 rounded-xl"
                 style={{ background: "var(--bg-secondary)", border: "1px dashed var(--border-muted)" }}
               >
-                {log.imageUrl && (
+                {log.imageUrls[0] && (
                   <div className="relative w-10 h-10 rounded-lg overflow-hidden shrink-0">
-                    <Image src={log.imageUrl} alt="" fill className="object-cover" sizes="40px" />
+                    <Image src={log.imageUrls[0]} alt="" fill className="object-cover" sizes="40px" />
                   </div>
                 )}
                 <p className="flex-1 min-w-0 text-sm truncate" style={{ color: "var(--text-secondary)" }}>

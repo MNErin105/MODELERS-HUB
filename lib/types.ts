@@ -141,7 +141,8 @@ export type PostLog = {
   id: string;
   content: string;
   genre: Category;
-  imageUrl: string | null;
+  /** Up to 2 images, in display order. */
+  imageUrls: string[];
   linkedPost: { id: string; title: string; thumbnailUrl: string } | null;
   /** Position within its linked post's curated "Build Log" list, or null if not curated. */
   curationSortOrder: number | null;

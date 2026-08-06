@@ -51,7 +51,7 @@ function mapPostLog(raw: RawPostLog): PostLog {
     id:        raw.id,
     content:   raw.content,
     genre:     DB_TO_CATEGORY[raw.genre] ?? "Other",
-    imageUrl:  sortedImages[0]?.image_url ?? null,
+    imageUrls: sortedImages.map((img) => img.image_url),
     linkedPost: linked
       ? { id: linked.id, title: linked.title, thumbnailUrl: sortedLinkedImages[0]?.image_url ?? "" }
       : null,
@@ -122,7 +122,7 @@ export async function getPostLogsByUserId(userId: string): Promise<PostLog[]> {
   return (data ?? []).map((r) => mapPostLog(r as unknown as RawPostLog));
 }
 
-// Create a post log, optionally with one image and/or a linked post.
+// Create a post log, optionally with up to 2 images and/or a linked post.
 // Throws on failure — including the weekly-rate-limit trigger's exception,
 // which the caller matches on message content to show a friendly error.
 export async function createPostLog(
@@ -130,7 +130,7 @@ export async function createPostLog(
   content: string,
   genre: Category,
   linkedPostId: string | null,
-  image: { stored: StoredFile } | null,
+  images: { stored: StoredFile }[],
 ): Promise<PostLog> {
   const { data: row, error } = await supabase
     .from("post_logs")
@@ -141,8 +141,9 @@ export async function createPostLog(
   if (error || !row) throw new Error(error?.message ?? "Failed to create post log");
   const postLogId = row.id as string;
 
-  if (image) {
-    const path = `${userId}/postlog-${postLogId}.${image.stored.ext}`;
+  for (let i = 0; i < images.length; i++) {
+    const image = images[i];
+    const path = `${userId}/postlog-${postLogId}-${i}.${image.stored.ext}`;
     const { error: upErr } = await supabase.storage
       .from("post-images")
       .upload(path, image.stored.buffer, { contentType: image.stored.contentType, upsert: false });
@@ -152,7 +153,7 @@ export async function createPostLog(
     await supabase.from("post_log_images").insert({
       post_log_id: postLogId,
       image_url:   urlData.publicUrl,
-      sort_order:  0,
+      sort_order:  i,
     });
   }
 
@@ -230,16 +231,21 @@ export async function reorderCuration(postId: string, orderedPostLogIds: string[
 
 // ── Edit / delete ────────────────────────────────────────────────────────────
 
-// image:
-//   "keep"                       — leave the existing image (or lack of one) untouched
-//   "remove"                     — drop the existing image, don't replace it
-//   { stored: StoredFile }       — replace (or add) the image with a newly picked file
+// Each entry is either an already-uploaded image being kept (by URL) or a
+// newly picked file to upload. The array's order becomes the new sort_order.
+export type PostLogImageInput =
+  | { kind: "existing"; url: string }
+  | { kind: "new"; stored: StoredFile };
+
+// images:
+//   "keep"                — leave the existing image set untouched
+//   PostLogImageInput[]   — replace with this exact final set (0-2 entries)
 export async function updatePostLog(
   userId: string,
   postLogId: string,
   content: string,
   genre: Category,
-  image: "keep" | "remove" | { stored: StoredFile },
+  images: "keep" | PostLogImageInput[],
 ): Promise<PostLog> {
   const { error } = await supabase
     .from("post_logs")
@@ -247,33 +253,45 @@ export async function updatePostLog(
     .eq("id", postLogId);
   if (error) throw new Error(error.message ?? "Failed to update post log");
 
-  if (image !== "keep") {
-    const { data: existingImages } = await supabase
+  if (images !== "keep") {
+    const { data: existingRows } = await supabase
       .from("post_log_images")
       .select("image_url")
       .eq("post_log_id", postLogId);
 
-    const storagePaths = (existingImages ?? [])
-      .map((r) => storagePathFromUrl(r.image_url as string))
+    // Only remove Storage objects for images that are actually dropped —
+    // kept entries reuse their existing URL and must not be deleted.
+    const keptUrls = new Set(
+      images.filter((i): i is { kind: "existing"; url: string } => i.kind === "existing").map((i) => i.url),
+    );
+    const removedPaths = (existingRows ?? [])
+      .map((r) => r.image_url as string)
+      .filter((url) => !keptUrls.has(url))
+      .map(storagePathFromUrl)
       .filter((p): p is string => !!p);
-    if (storagePaths.length > 0) {
-      await supabase.storage.from("post-images").remove(storagePaths);
+    if (removedPaths.length > 0) {
+      await supabase.storage.from("post-images").remove(removedPaths);
     }
+
     await supabase.from("post_log_images").delete().eq("post_log_id", postLogId);
 
-    if (image !== "remove") {
-      const path = `${userId}/postlog-${postLogId}-${Date.now()}.${image.stored.ext}`;
+    const finalRows: { post_log_id: string; image_url: string; sort_order: number }[] = [];
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
+      if (img.kind === "existing") {
+        finalRows.push({ post_log_id: postLogId, image_url: img.url, sort_order: i });
+        continue;
+      }
+      const path = `${userId}/postlog-${postLogId}-${Date.now()}-${i}.${img.stored.ext}`;
       const { error: upErr } = await supabase.storage
         .from("post-images")
-        .upload(path, image.stored.buffer, { contentType: image.stored.contentType, upsert: false });
+        .upload(path, img.stored.buffer, { contentType: img.stored.contentType, upsert: false });
       if (upErr) throw new Error(upErr.message ?? "Image upload failed");
-
       const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
-      await supabase.from("post_log_images").insert({
-        post_log_id: postLogId,
-        image_url:   urlData.publicUrl,
-        sort_order:  0,
-      });
+      finalRows.push({ post_log_id: postLogId, image_url: urlData.publicUrl, sort_order: i });
+    }
+    if (finalRows.length > 0) {
+      await supabase.from("post_log_images").insert(finalRows);
     }
   }
 
@@ -287,12 +305,12 @@ export async function updatePostLog(
 }
 
 // Deletes a post log. post_log_images/likes/comments/curations all cascade
-// via ON DELETE CASCADE, but the Storage object itself does not — clean it
-// up explicitly first, same pattern as EditPostForm's post delete.
-export async function deletePostLog(postLogId: string, imageUrl: string | null): Promise<void> {
-  if (imageUrl) {
-    const path = storagePathFromUrl(imageUrl);
-    if (path) await supabase.storage.from("post-images").remove([path]);
+// via ON DELETE CASCADE, but the Storage objects themselves do not — clean
+// them up explicitly first, same pattern as EditPostForm's post delete.
+export async function deletePostLog(postLogId: string, imageUrls: string[]): Promise<void> {
+  const paths = imageUrls.map(storagePathFromUrl).filter((p): p is string => !!p);
+  if (paths.length > 0) {
+    await supabase.storage.from("post-images").remove(paths);
   }
   const { error } = await supabase.from("post_logs").delete().eq("id", postLogId);
   if (error) throw new Error(error.message ?? "Failed to delete post log");

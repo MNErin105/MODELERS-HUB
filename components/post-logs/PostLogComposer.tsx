@@ -11,8 +11,12 @@ import { prepareFile, StoredFile } from "@/lib/imageUtils";
 import { getPostsByUserId } from "@/lib/supabase/queries";
 import { createPostLog } from "@/lib/supabase/postLogsQueries";
 import { CATEGORIES, Category, Post } from "@/lib/types";
+import CropModal from "@/components/ui/CropModal";
 
 const CONTENT_MAX = 280;
+const MAX_IMAGES  = 2;
+
+type ComposerImage = { id: string; previewUrl: string; stored: StoredFile };
 
 const inputStyle = {
   background: "var(--bg-secondary)",
@@ -30,9 +34,9 @@ export default function PostLogComposer() {
   const [content, setContent] = useState("");
   const [genre,   setGenre]   = useState<Category | null>(null);
 
-  // Image — single file, same prepareFile flow as NewPostForm
-  const [imagePreview, setImagePreview] = useState<{ id: string; url: string } | null>(null);
-  const [imageStored,  setImageStored]  = useState<StoredFile | null>(null);
+  // Images — up to MAX_IMAGES, each cropped via CropModal before prepareFile
+  const [images,  setImages]  = useState<ComposerImage[]>([]);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
 
   // Optional link to one of the user's own posts
   const [ownPosts,       setOwnPosts]       = useState<Post[]>([]);
@@ -46,18 +50,28 @@ export default function PostLogComposer() {
     getPostsByUserId(user.id).then(setOwnPosts);
   }, [user]);
 
-  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (!file) return;
-    const { previewUrl, stored } = await prepareFile(file);
-    setImagePreview({ id: previewUrl, url: previewUrl });
-    setImageStored(stored);
+    if (!file || images.length >= MAX_IMAGES) return;
+    setCropSrc(URL.createObjectURL(file));
   }
 
-  function removeImage() {
-    setImagePreview(null);
-    setImageStored(null);
+  async function handleCropApply(croppedFile: File) {
+    const src = cropSrc;
+    setCropSrc(null);
+    if (src) URL.revokeObjectURL(src);
+    const { previewUrl, stored } = await prepareFile(croppedFile);
+    setImages((prev) => [...prev, { id: previewUrl, previewUrl, stored }].slice(0, MAX_IMAGES));
+  }
+
+  function handleCropCancel() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  }
+
+  function removeImage(id: string) {
+    setImages((prev) => prev.filter((img) => img.id !== id));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -72,7 +86,7 @@ export default function PostLogComposer() {
         content.trim(),
         genre,
         linkedPostId,
-        imageStored ? { stored: imageStored } : null,
+        images.map((img) => ({ stored: img.stored })),
       );
       router.push(`/build-logs#${log.id}`);
     } catch (err) {
@@ -181,29 +195,48 @@ export default function PostLogComposer() {
             </div>
           </div>
 
-          {/* ── Image ────────────────────────────────────────────────── */}
-          {imagePreview ? (
-            <div className="relative w-40 rounded-xl overflow-hidden" style={{ aspectRatio: "1/1" }}>
-              <Image src={imagePreview.url} alt="" fill className="object-cover" unoptimized />
-              <button
-                type="button"
-                onClick={removeImage}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(0,0,0,0.7)", color: "#fff" }}
-                aria-label={isJa ? "画像を削除" : "Remove image"}
+          {/* ── Images (up to 2) ─────────────────────────────────────── */}
+          <div className="flex flex-wrap gap-3">
+            {images.map((img) => (
+              <div key={img.id} className="relative w-32 rounded-xl overflow-hidden" style={{ aspectRatio: "1/1" }}>
+                <Image src={img.previewUrl} alt="" fill className="object-cover" unoptimized />
+                <button
+                  type="button"
+                  onClick={() => removeImage(img.id)}
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center"
+                  style={{ background: "rgba(0,0,0,0.7)", color: "#fff" }}
+                  aria-label={isJa ? "画像を削除" : "Remove image"}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+            {images.length < MAX_IMAGES && (
+              <label
+                className="flex flex-col items-center justify-center gap-1 w-32 rounded-xl cursor-pointer transition-opacity hover:opacity-80 text-center px-2"
+                style={{ aspectRatio: "1/1", background: "var(--bg-secondary)", border: "1px dashed var(--border-muted)", color: "var(--text-muted)" }}
               >
-                <X size={13} />
-              </button>
-            </div>
-          ) : (
-            <label
-              className="flex items-center gap-2 w-fit px-4 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-opacity hover:opacity-80"
-              style={{ background: "var(--bg-secondary)", border: "1px dashed var(--border-muted)", color: "var(--text-muted)" }}
-            >
-              <ImagePlus size={16} />
-              {isJa ? "画像を追加（任意・1枚まで）" : "Add a photo (optional, up to 1)"}
-              <input type="file" accept="image/*,image/heic,image/heif" className="sr-only" onChange={handleImageSelect} />
-            </label>
+                <ImagePlus size={18} />
+                <span className="text-xs">
+                  {isJa ? `画像を追加（任意・最大${MAX_IMAGES}枚）` : `Add a photo (optional, up to ${MAX_IMAGES})`}
+                </span>
+                <input type="file" accept="image/*,image/heic,image/heif" className="sr-only" onChange={handleFileSelect} />
+              </label>
+            )}
+          </div>
+
+          {cropSrc && (
+            <CropModal
+              imageSrc={cropSrc}
+              aspect={1}
+              cropShape="rect"
+              outputWidth={800}
+              outputHeight={800}
+              filename="buildlog.jpg"
+              title={isJa ? "画像を切り抜き" : "Crop Photo"}
+              onApply={handleCropApply}
+              onCancel={handleCropCancel}
+            />
           )}
 
           {/* ── Linked post (optional, understated) ─────────────────── */}

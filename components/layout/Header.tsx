@@ -279,14 +279,6 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
           {notifOpen && <NotificationDropdown onClose={closeNotif} />}
         </div>
       )}
-      <Link
-        href="/build-logs"
-        onClick={onClose}
-        className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
-        style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
-      >
-        <Rss size={14} /> {isJa ? "制作ログを見る" : "View Build Logs"}
-      </Link>
       <a
         href={BUG_REPORT_URL}
         target="_blank"
@@ -374,18 +366,6 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             )}
           </button>
           {notifOpen && <NotificationDropdown onClose={() => setNotifOpen(false)} />}
-        </div>
-
-        {/* Build Logs */}
-        <div className="relative">
-          <Link
-            href="/build-logs"
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
-          >
-            <Rss size={15} /> {isJa ? "制作ログを見る" : "View Build Logs"}
-          </Link>
         </div>
 
         {/* Bug report */}
@@ -541,6 +521,17 @@ function HeaderInner() {
               {postMenuOpen && <PostMenuDropdown onClose={closePostMenu} locale={locale} />}
             </div>
           )}
+
+          {/* Build Logs — icon-only, always visible on both desktop and mobile */}
+          <Link
+            href="/build-logs"
+            aria-label={isJa ? "制作ログを見る" : "View Build Logs"}
+            title={isJa ? "制作ログを見る" : "View Build Logs"}
+            className="flex items-center justify-center w-9 h-9 rounded-full transition-colors hover:opacity-80"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Rss size={18} />
+          </Link>
 
           {/* Locale toggle — desktop, always visible */}
           <div className="hidden md:flex">

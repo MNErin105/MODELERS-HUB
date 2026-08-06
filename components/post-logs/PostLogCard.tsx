@@ -11,6 +11,7 @@ import { deletePostLog } from "@/lib/supabase/postLogsQueries";
 import UserAvatar from "@/components/ui/UserAvatar";
 import PostLogLikeButton from "./PostLogLikeButton";
 import PostLogEditForm from "./PostLogEditForm";
+import PostLogDetailModal from "./PostLogDetailModal";
 
 function relativeTime(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
@@ -35,6 +36,7 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
   const [log,          setLog]          = useState(initialLog);
   const [isDeleted,     setIsDeleted]     = useState(false);
   const [editing,       setEditing]       = useState(false);
+  const [detailOpen,    setDetailOpen]    = useState(false);
   const [confirmOpen,   setConfirmOpen]   = useState(false);
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState<string | null>(null);
@@ -45,7 +47,7 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
     setDeleting(true);
     setDeleteError(null);
     try {
-      await deletePostLog(log.id, log.imageUrl);
+      await deletePostLog(log.id, log.imageUrls);
       setIsDeleted(true);
       onDeleted?.();
     } catch (err) {
@@ -68,11 +70,16 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
 
   return (
     <div
-      className="relative flex gap-3 p-4 rounded-xl"
+      className="relative flex gap-2.5 p-3 rounded-xl cursor-pointer transition-colors hover:opacity-95"
       style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
+      onClick={() => setDetailOpen(true)}
     >
-      <Link href={`/profile/${log.author.username}`} className="shrink-0">
-        <div className="relative w-10 h-10 rounded-full overflow-hidden">
+      <Link
+        href={`/profile/${log.author.username}`}
+        className="shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative w-9 h-9 rounded-full overflow-hidden">
           <UserAvatar src={log.author.avatarUrl} alt={log.author.name} fill />
         </div>
       </Link>
@@ -83,6 +90,7 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
             href={`/profile/${log.author.username}`}
             className="text-sm font-semibold hover:underline"
             style={{ color: "var(--text-primary)" }}
+            onClick={(e) => e.stopPropagation()}
           >
             {log.author.name}
           </Link>
@@ -91,34 +99,34 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
           </span>
         </div>
 
-        <p className="text-sm leading-relaxed mt-1 whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-sm leading-snug mt-1 whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
           {log.content}
         </p>
 
-        {log.imageUrl && (
-          <div
-            className="relative w-full rounded-lg overflow-hidden mt-3"
-            style={{ aspectRatio: "4/3", maxHeight: 400, background: "var(--bg-tertiary)" }}
-          >
-            <Image
-              src={log.imageUrl}
-              alt=""
-              fill
-              sizes="(max-width: 767px) 100vw, 420px"
-              className="object-cover"
-            />
+        {log.imageUrls.length > 0 && (
+          <div className="flex gap-1.5 mt-2">
+            {log.imageUrls.map((url) => (
+              <div
+                key={url}
+                className="relative rounded-md overflow-hidden shrink-0"
+                style={{ width: 72, height: 72, background: "var(--bg-tertiary)" }}
+              >
+                <Image src={url} alt="" fill sizes="72px" className="object-cover" />
+              </div>
+            ))}
           </div>
         )}
 
         {log.linkedPost && (
           <Link
             href={`/posts/${log.linkedPost.id}`}
-            className="flex items-center gap-2 mt-3 pr-3 rounded-lg w-fit max-w-full transition-opacity hover:opacity-80"
+            className="flex items-center gap-1.5 mt-2 pr-2.5 rounded-lg w-fit max-w-full transition-opacity hover:opacity-80"
             style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)" }}
+            onClick={(e) => e.stopPropagation()}
           >
             {log.linkedPost.thumbnailUrl && (
-              <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0">
-                <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="32px" className="object-cover" />
+              <div className="relative w-6 h-6 rounded-md overflow-hidden shrink-0">
+                <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="24px" className="object-cover" />
               </div>
             )}
             <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
@@ -127,13 +135,13 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
           </Link>
         )}
 
-        <div className="mt-2">
+        <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
           <PostLogLikeButton postLogId={log.id} count={log.likeCount} />
         </div>
       </div>
 
       {isOwner && (
-        <div className="absolute top-3 right-3 flex items-center gap-1">
+        <div className="absolute top-2.5 right-2.5 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
             onClick={() => setEditing(true)}
@@ -155,11 +163,24 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
         </div>
       )}
 
+      {detailOpen && (
+        <PostLogDetailModal
+          log={log}
+          isOwner={isOwner}
+          onClose={() => setDetailOpen(false)}
+          onRequestEdit={() => { setDetailOpen(false); setEditing(true); }}
+          onRequestDelete={() => { setDetailOpen(false); setConfirmOpen(true); }}
+        />
+      )}
+
       {confirmOpen && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.75)" }}
-          onClick={(e) => { if (e.target === e.currentTarget && !deleting) setConfirmOpen(false); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.target === e.currentTarget && !deleting) setConfirmOpen(false);
+          }}
         >
           <div
             className="relative w-full max-w-sm rounded-2xl p-7 flex flex-col gap-5"
