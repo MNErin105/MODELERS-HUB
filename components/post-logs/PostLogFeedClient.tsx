@@ -41,6 +41,15 @@ export default function PostLogFeedClient({ initialLogs, initialTotalCount }: Pr
     setPage(0);
   }
 
+  function handleDeleted(logId: string) {
+    setLogs((prev) => prev.filter((l) => l.id !== logId));
+    setTotalCount((prev) => Math.max(0, prev - 1));
+  }
+
+  function handleUpdated(updated: PostLog) {
+    setLogs((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+  }
+
   const totalPages = Math.max(1, Math.ceil(totalCount / POSTS_PAGE_SIZE));
 
   return (
@@ -98,7 +107,14 @@ export default function PostLogFeedClient({ initialLogs, initialTotalCount }: Pr
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {logs.map((log) => <PostLogCard key={log.id} log={log} />)}
+          {logs.map((log) => (
+            <PostLogCard
+              key={log.id}
+              log={log}
+              onDeleted={() => handleDeleted(log.id)}
+              onUpdated={handleUpdated}
+            />
+          ))}
         </div>
       )}
 

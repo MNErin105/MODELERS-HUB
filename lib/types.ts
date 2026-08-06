@@ -143,6 +143,8 @@ export type PostLog = {
   genre: Category;
   imageUrl: string | null;
   linkedPost: { id: string; title: string; thumbnailUrl: string } | null;
+  /** Position within its linked post's curated "Build Log" list, or null if not curated. */
+  curationSortOrder: number | null;
   author: Author;
   likeCount: number;
   createdAt: string;

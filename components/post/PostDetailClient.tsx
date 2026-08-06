@@ -4,11 +4,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Post } from "@/lib/types";
-import { ChevronLeft, Image as ImageIcon, MessageSquare } from "lucide-react";
+import { ChevronLeft, Image as ImageIcon, Rss, MessageSquare } from "lucide-react";
 import WorksTab from "./WorksTab";
+import BuildLogTab from "./BuildLogTab";
 import CommentsTab from "./CommentsTab";
 
-type Tab = "works" | "comments";
+type Tab = "works" | "buildLog" | "comments";
 
 type Props = {
   post: Post;
@@ -21,7 +22,8 @@ export default function PostDetailClient({ post }: Props) {
   const activeTab = (searchParams.get("tab") as Tab) ?? "works";
 
   const TABS: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
-    { id: "works",   label: t("tabs.works"),   icon: ImageIcon },
+    { id: "works",    label: t("tabs.works"),    icon: ImageIcon },
+    { id: "buildLog", label: t("tabs.buildLog"), icon: Rss },
     { id: "comments", label: t("tabs.comments"), icon: MessageSquare },
   ];
 
@@ -89,6 +91,7 @@ export default function PostDetailClient({ post }: Props) {
       {/* ── Tab content ─────────────────────────────────────────────── */}
       <div className="max-w-[1440px] mx-auto px-6 py-8">
         {activeTab === "works"    && <WorksTab post={post} />}
+        {activeTab === "buildLog" && <BuildLogTab post={post} />}
         {activeTab === "comments" && <CommentsTab postId={post.id} />}
       </div>
     </div>

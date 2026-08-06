@@ -72,6 +72,7 @@
     "edit": "Edit",
     "tabs": {
       "works": "Works",
+      "buildLog": "Build Log",
       "comments": "Comments"
     },
     "comments": {
@@ -88,6 +89,17 @@
       "replies": "replies",
       "authorBadge": "Author",
       "aiFaq": "Frequently asked questions auto-generated from this thread — coming soon."
+    },
+    "buildLog": {
+      "edit": "Edit",
+      "done": "Done",
+      "empty": "No build logs have been added to this work yet.",
+      "candidatesTitle": "Linked, not yet added",
+      "curatedTitle": "Added",
+      "noCandidates": "No build logs available to add.",
+      "noCurated": "No build logs added yet.",
+      "add": "Add",
+      "remove": "Remove"
     }
   },
   "profile": {
@@ -101,8 +113,16 @@
     "postsCount": "{count} posts",
     "tabs": {
       "works": "Works",
+      "buildLogs": "Build Logs",
       "liked": "Liked",
       "saved": "Saved"
+    },
+    "logView": {
+      "list": "List",
+      "note": "Note",
+      "empty": "No works to show in note view.",
+      "expand": "Show {count} build logs",
+      "collapse": "Collapse"
     },
     "edit": {
       "featuredWork": "Featured Work",

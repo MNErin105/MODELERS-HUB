@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Post, Author, PostLog } from "@/lib/types";
 
@@ -11,9 +11,11 @@ import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
 import AvatarCropModal from "./AvatarCropModal";
 import PostLogCard from "@/components/post-logs/PostLogCard";
+import BuildLogNoteView from "./BuildLogNoteView";
 import { Camera, ChevronLeft, Layers, Bookmark, Heart, LogOut, Loader2, Pencil, PlusSquare, Rss } from "lucide-react";
 
 type Tab = "works" | "logs" | "liked" | "saved";
+type LogViewMode = "list" | "note";
 
 type Props = {
   author: Author;
@@ -49,11 +51,28 @@ export default function ProfilePageClient({
 }: Props) {
   const t    = useTranslations("profile");
   const tNav = useTranslations("nav");
+  const tLog = useTranslations("profile.logView");
   const [activeTab, setActiveTab] = useState<Tab>("works");
+  const [logViewMode, setLogViewMode] = useState<LogViewMode>("list");
   const [uploading, setUploading]   = useState(false);
   const [editOpen,  setEditOpen]    = useState(false);
   const [cropSrc,   setCropSrc]     = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Mirrors the postLogs prop into local state so edit/delete on a
+  // PostLogCard can update this tab's list/count immediately. Synced via
+  // effect because DynamicProfilePage (mypage) fetches postLogs
+  // asynchronously and updates the prop after this component has mounted.
+  const [postLogsState, setPostLogsState] = useState(postLogs);
+  useEffect(() => { setPostLogsState(postLogs); }, [postLogs]);
+
+  function handleLogDeleted(logId: string) {
+    setPostLogsState((prev) => prev.filter((l) => l.id !== logId));
+  }
+
+  function handleLogUpdated(updated: PostLog) {
+    setPostLogsState((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+  }
 
   const pinnedSet = new Set(pinnedPostIds);
   const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
@@ -67,7 +86,7 @@ export default function ProfilePageClient({
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
     { key: "works", label: t("tabs.works"), icon: <Layers size={14} />, count: authorPosts.length },
-    { key: "logs",  label: "Build Logs",    icon: <Rss    size={14} />, count: postLogs.length },
+    { key: "logs",  label: t("tabs.buildLogs"), icon: <Rss size={14} />, count: postLogsState.length },
     ...(isOwnProfile ? [
       { key: "liked" as Tab, label: t("tabs.liked"), icon: <Heart    size={14} />, count: likedPosts.length },
       { key: "saved" as Tab, label: t("tabs.saved"), icon: <Bookmark size={14} />, count: savedPosts.length },
@@ -344,15 +363,50 @@ export default function ProfilePageClient({
             />
           </>
         ) : activeTab === "logs" ? (
-          postLogs.length === 0 ? (
-            <p className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
-              No build logs yet.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
-              {postLogs.map((log) => <PostLogCard key={log.id} log={log} />)}
+          <>
+            <div className="flex gap-2 mb-6">
+              {(["list", "note"] as LogViewMode[]).map((mode) => {
+                const active = logViewMode === mode;
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setLogViewMode(mode)}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      background: active ? "var(--accent-primary)" : "var(--bg-secondary)",
+                      color:      active ? "var(--bg-primary)"     : "var(--text-secondary)",
+                      border:     `1px solid ${active ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                    }}
+                  >
+                    {mode === "list" ? tLog("list") : tLog("note")}
+                  </button>
+                );
+              })}
             </div>
-          )
+
+            {logViewMode === "note" ? (
+              <BuildLogNoteView
+                postLogs={postLogsState}
+                onDeleted={handleLogDeleted}
+                onUpdated={handleLogUpdated}
+              />
+            ) : postLogsState.length === 0 ? (
+              <p className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
+                No build logs yet.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
+                {postLogsState.map((log) => (
+                  <PostLogCard
+                    key={log.id}
+                    log={log}
+                    onDeleted={() => handleLogDeleted(log.id)}
+                    onUpdated={handleLogUpdated}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <WorkGrid posts={tabPosts[activeTab]} />
         )}

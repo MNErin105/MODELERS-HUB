@@ -72,6 +72,7 @@
     "edit": "編集",
     "tabs": {
       "works": "作品",
+      "buildLog": "制作ログ",
       "comments": "コメント"
     },
     "comments": {
@@ -88,6 +89,17 @@
       "replies": "件の返信",
       "authorBadge": "投稿者",
       "aiFaq": "スレッドのよくある質問を自動生成 — 近日公開予定。"
+    },
+    "buildLog": {
+      "edit": "編集",
+      "done": "完了",
+      "empty": "この作品にはまだ制作ログがまとめられていません",
+      "candidatesTitle": "紐付け済み・未採用",
+      "curatedTitle": "採用済み",
+      "noCandidates": "追加できる制作ログがありません",
+      "noCurated": "まだ制作ログがまとめられていません",
+      "add": "追加",
+      "remove": "まとめから外す"
     }
   },
   "profile": {
@@ -101,8 +113,16 @@
     "postsCount": "{count} 件",
     "tabs": {
       "works": "作品",
+      "buildLogs": "制作ログ",
       "liked": "いいね",
       "saved": "保存済み"
+    },
+    "logView": {
+      "list": "一覧",
+      "note": "ノート",
+      "empty": "ノートに表示できる作品がありません",
+      "expand": "{count}件の制作ログを表示",
+      "collapse": "折りたたむ"
     },
     "edit": {
       "featuredWork": "看板作品",
