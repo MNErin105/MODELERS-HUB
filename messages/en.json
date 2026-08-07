@@ -120,9 +120,7 @@
     "logView": {
       "list": "List",
       "note": "Note",
-      "empty": "No works to show in note view.",
-      "expand": "Show {count} build logs",
-      "collapse": "Collapse"
+      "empty": "No works to show in note view."
     },
     "edit": {
       "featuredWork": "Featured Work",

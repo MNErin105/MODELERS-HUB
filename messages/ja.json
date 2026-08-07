@@ -120,9 +120,7 @@
     "logView": {
       "list": "一覧",
       "note": "ノート",
-      "empty": "ノートに表示できる作品がありません",
-      "expand": "{count}件の制作ログを表示",
-      "collapse": "折りたたむ"
+      "empty": "ノートに表示できる作品がありません"
     },
     "edit": {
       "featuredWork": "看板作品",

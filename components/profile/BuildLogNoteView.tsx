@@ -1,10 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { PostLog } from "@/lib/types";
 import PostLogCard from "@/components/post-logs/PostLogCard";
 
@@ -44,26 +43,26 @@ type NoteCardProps = {
 };
 
 function NoteCard({ group, onDeleted, onUpdated }: NoteCardProps) {
-  const t = useTranslations("profile.logView");
-  const [open, setOpen] = useState(false);
-  const preview = group.logs.slice(0, 1);
-  const shown = open ? group.logs : preview;
-
   return (
     <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}>
-      <Link href={`/posts/${group.post.id}`} className="flex items-center gap-3 p-4 transition-opacity hover:opacity-80">
+      {/* Cover */}
+      <Link
+        href={`/posts/${group.post.id}`}
+        className="flex flex-col items-center gap-2 p-4 text-center transition-opacity hover:opacity-80"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
         {group.post.thumbnailUrl && (
           <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
             <Image src={group.post.thumbnailUrl} alt="" fill className="object-cover" sizes="48px" />
           </div>
         )}
-        <span className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+        <span className="text-base font-bold leading-snug" style={{ color: "var(--text-primary)" }}>
           {group.post.title}
         </span>
       </Link>
 
-      <div className="flex flex-col gap-3 px-4 pb-4">
-        {shown.map((log) => (
+      <div className="flex flex-col gap-3 p-3">
+        {group.logs.map((log) => (
           <PostLogCard
             key={log.id}
             log={log}
@@ -72,17 +71,6 @@ function NoteCard({ group, onDeleted, onUpdated }: NoteCardProps) {
           />
         ))}
       </div>
-
-      {group.logs.length > 1 && (
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="flex items-center gap-1 w-full px-4 py-3 text-xs font-medium transition-opacity hover:opacity-80"
-          style={{ color: "var(--accent-primary)", borderTop: "1px solid var(--border-subtle)" }}
-        >
-          {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          {open ? t("collapse") : t("expand", { count: group.logs.length })}
-        </button>
-      )}
     </div>
   );
 }
@@ -99,8 +87,10 @@ export default function BuildLogNoteView({ postLogs, onDeleted, onUpdated }: Pro
     );
   }
 
+  // items-start keeps each card at its natural height instead of stretching
+  // to the tallest in the row — note cards vary a lot once every log is shown.
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
       {groups.map((group) => (
         <NoteCard key={group.post.id} group={group} onDeleted={onDeleted} onUpdated={onUpdated} />
       ))}

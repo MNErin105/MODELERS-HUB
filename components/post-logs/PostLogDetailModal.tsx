@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
@@ -34,7 +35,12 @@ export default function PostLogDetailModal({ log, isOwner, onClose, onRequestEdi
 
   const lightboxImages: LightboxImage[] = log.imageUrls.map((url) => ({ url }));
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  // Portaled to <body>: the card this modal is rendered from sets
+  // hover:opacity-95, and opacity < 1 creates a stacking context that would
+  // otherwise trap this fixed overlay behind sibling cards.
+  return createPortal(
     <>
       <div
         className="fixed inset-0 z-[150] flex items-center justify-center p-4"
@@ -148,6 +154,7 @@ export default function PostLogDetailModal({ log, isOwner, onClose, onRequestEdi
           onClose={() => setLightboxIndex(null)}
         />
       )}
-    </>
+    </>,
+    document.body,
   );
 }

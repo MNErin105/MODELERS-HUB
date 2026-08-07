@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
@@ -9,6 +10,7 @@ import { PostLog } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { deletePostLog } from "@/lib/supabase/postLogsQueries";
 import UserAvatar from "@/components/ui/UserAvatar";
+import ImageLightbox, { LightboxImage } from "@/components/ui/ImageLightbox";
 import PostLogLikeButton from "./PostLogLikeButton";
 import PostLogEditForm from "./PostLogEditForm";
 import PostLogDetailModal from "./PostLogDetailModal";
@@ -37,11 +39,13 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
   const [isDeleted,     setIsDeleted]     = useState(false);
   const [editing,       setEditing]       = useState(false);
   const [detailOpen,    setDetailOpen]    = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [confirmOpen,   setConfirmOpen]   = useState(false);
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState<string | null>(null);
 
   const isOwner = !!user && user.id === log.author.id;
+  const lightboxImages: LightboxImage[] = log.imageUrls.map((url) => ({ url }));
 
   async function handleDelete() {
     setDeleting(true);
@@ -99,20 +103,23 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
           </span>
         </div>
 
-        <p className="text-sm leading-snug mt-1 whitespace-pre-wrap" style={{ color: "var(--text-secondary)" }}>
+        <p className="text-sm leading-snug mt-1 whitespace-pre-wrap line-clamp-3" style={{ color: "var(--text-secondary)" }}>
           {log.content}
         </p>
 
         {log.imageUrls.length > 0 && (
-          <div className="flex gap-1.5 mt-2">
-            {log.imageUrls.map((url) => (
-              <div
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {log.imageUrls.map((url, i) => (
+              <button
                 key={url}
-                className="relative rounded-md overflow-hidden shrink-0"
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
+                className="relative rounded-md overflow-hidden shrink-0 transition-opacity hover:opacity-90"
                 style={{ width: 72, height: 72, background: "var(--bg-tertiary)" }}
+                aria-label={isJa ? "画像を拡大" : "View image"}
               >
                 <Image src={url} alt="" fill sizes="72px" className="object-cover" />
-              </div>
+              </button>
             ))}
           </div>
         )}
@@ -173,7 +180,20 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
         />
       )}
 
-      {confirmOpen && (
+      {/* Portaled for the same stacking-context reason as the modals below —
+          hover:opacity-95 on this card would otherwise trap the lightbox. */}
+      {lightboxIndex !== null && typeof document !== "undefined" && createPortal(
+        <ImageLightbox
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />,
+        document.body,
+      )}
+
+      {/* Portaled to <body> for the same stacking-context reason as the detail
+          modal — hover:opacity-95 on this card would otherwise trap it. */}
+      {confirmOpen && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.75)" }}
@@ -239,7 +259,8 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
