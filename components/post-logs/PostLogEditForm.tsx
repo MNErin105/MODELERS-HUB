@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { Send, X, ImagePlus, AlertCircle } from "lucide-react";
-import { CATEGORIES, Category, PostLog } from "@/lib/types";
+import { CATEGORIES, Category, Post, PostLog } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
 import { prepareFile, StoredFile } from "@/lib/imageUtils";
+import { getPostsByUserId } from "@/lib/supabase/queries";
 import { updatePostLog, PostLogImageInput } from "@/lib/supabase/postLogsQueries";
 import CropModal from "@/components/ui/CropModal";
 
@@ -47,8 +48,16 @@ export default function PostLogEditForm({ log, onCancel, onSaved }: Props) {
   );
   const [cropSrc, setCropSrc] = useState<string | null>(null);
 
+  const [ownPosts,     setOwnPosts]     = useState<Post[]>([]);
+  const [linkedPostId, setLinkedPostId] = useState<string | null>(log.linkedPost?.id ?? null);
+
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    getPostsByUserId(user.id).then(setOwnPosts);
+  }, [user]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -82,7 +91,7 @@ export default function PostLogEditForm({ log, onCancel, onSaved }: Props) {
       const imageInputs: PostLogImageInput[] = images.map((img) =>
         img.kind === "existing" ? { kind: "existing", url: img.url } : { kind: "new", stored: img.stored },
       );
-      const updated = await updatePostLog(user.id, log.id, content.trim(), genre, imageInputs);
+      const updated = await updatePostLog(user.id, log.id, content.trim(), genre, linkedPostId, imageInputs);
       onSaved(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : (isJa ? "保存に失敗しました" : "Failed to save."));
@@ -174,6 +183,49 @@ export default function PostLogEditForm({ log, onCancel, onSaved }: Props) {
           onCancel={handleCropCancel}
         />
       )}
+
+      {/* ── Linked work ─────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-1.5">
+        <span
+          className="text-xs font-semibold uppercase tracking-widest"
+          style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}
+        >
+          {isJa ? "関連する作品（任意）" : "Linked work (optional)"}
+        </span>
+        {ownPosts.length === 0 ? (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {isJa ? "投稿がまだありません" : "You haven't posted any works yet."}
+          </p>
+        ) : (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {ownPosts.map((post) => {
+              const selected = linkedPostId === post.id;
+              return (
+                <button
+                  key={post.id}
+                  type="button"
+                  onClick={() => setLinkedPostId(selected ? null : post.id)}
+                  className="relative shrink-0 rounded-lg overflow-hidden transition-all hover:opacity-90"
+                  style={{ width: 48, height: 48, border: `2px solid ${selected ? "var(--accent-primary)" : "var(--border-subtle)"}` }}
+                  title={post.title}
+                >
+                  <Image src={post.thumbnailUrl} alt={post.title} fill className="object-cover" sizes="48px" />
+                  {selected && (
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+                      <span style={{ color: "var(--accent-primary)", fontSize: 14, lineHeight: 1 }}>★</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {linkedPostId && (
+          <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+            {ownPosts.find((p) => p.id === linkedPostId)?.title ?? log.linkedPost?.title ?? ""}
+          </p>
+        )}
+      </div>
 
       {error && (
         <p className="flex items-center gap-2 text-xs" style={{ color: "#f87171" }}>

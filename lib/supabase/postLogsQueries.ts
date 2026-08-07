@@ -245,13 +245,28 @@ export async function updatePostLog(
   postLogId: string,
   content: string,
   genre: Category,
+  linkedPostId: string | null,
   images: "keep" | PostLogImageInput[],
 ): Promise<PostLog> {
+  const { data: before } = await supabase
+    .from("post_logs")
+    .select("linked_post_id")
+    .eq("id", postLogId)
+    .single();
+  const previousLinkedPostId = (before?.linked_post_id as string | null) ?? null;
+
   const { error } = await supabase
     .from("post_logs")
-    .update({ content, genre: CATEGORY_TO_DB[genre] ?? "other" })
+    .update({ content, genre: CATEGORY_TO_DB[genre] ?? "other", linked_post_id: linkedPostId })
     .eq("id", postLogId);
   if (error) throw new Error(error.message ?? "Failed to update post log");
+
+  // A curation row is only valid while the log is still linked to that post
+  // (post_log_curations' insert policy enforces it, but existing rows aren't
+  // re-checked). Re-pointing or clearing the link un-curates the log.
+  if (previousLinkedPostId !== linkedPostId) {
+    await supabase.from("post_log_curations").delete().eq("post_log_id", postLogId);
+  }
 
   if (images !== "keep") {
     const { data: existingRows } = await supabase

@@ -19,6 +19,11 @@ type Props = {
   onCuratedChange: (logs: PostLog[]) => void;
 };
 
+// Matches the absolute-date convention used elsewhere (WorksTab, CommentsTab).
+function postedDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+}
+
 export default function BuildLogCurationEditor({ postId, curated, onCuratedChange }: Props) {
   const t = useTranslations("post.buildLog");
   const { user } = useAuth();
@@ -125,9 +130,14 @@ export default function BuildLogCurationEditor({ postId, curated, onCuratedChang
                     <Image src={log.imageUrls[0]} alt="" fill className="object-cover" sizes="40px" />
                   </div>
                 )}
-                <p className="flex-1 min-w-0 text-sm truncate" style={{ color: "var(--text-secondary)" }}>
-                  {log.content}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate" style={{ color: "var(--text-secondary)" }}>
+                    {log.content}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                    {postedDate(log.createdAt)}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleRemove(log)}
@@ -170,9 +180,14 @@ export default function BuildLogCurationEditor({ postId, curated, onCuratedChang
                     <Image src={log.imageUrls[0]} alt="" fill className="object-cover" sizes="40px" />
                   </div>
                 )}
-                <p className="flex-1 min-w-0 text-sm truncate" style={{ color: "var(--text-secondary)" }}>
-                  {log.content}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm truncate" style={{ color: "var(--text-secondary)" }}>
+                    {log.content}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+                    {postedDate(log.createdAt)}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleAdd(log)}

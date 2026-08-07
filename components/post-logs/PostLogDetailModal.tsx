@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useLocale } from "next-intl";
-import { Pencil, Trash2, X } from "lucide-react";
+import { Pencil, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { PostLog } from "@/lib/types";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ImageLightbox, { LightboxImage } from "@/components/ui/ImageLightbox";
@@ -32,8 +32,30 @@ export default function PostLogDetailModal({ log, isOwner, onClose, onRequestEdi
   const locale = useLocale();
   const isJa   = locale === "ja";
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [imageIndex,    setImageIndex]    = useState(0);
 
   const lightboxImages: LightboxImage[] = log.imageUrls.map((url) => ({ url }));
+  const imageCount = log.imageUrls.length;
+
+  const touchStartX = useRef(0);
+  // A swipe ends with a click event too — suppress it so swiping doesn't
+  // also open the fullscreen lightbox.
+  const swiped = useRef(false);
+
+  function showPrev() { setImageIndex((i) => (i - 1 + imageCount) % imageCount); }
+  function showNext() { setImageIndex((i) => (i + 1) % imageCount); }
+
+  // Arrow keys drive the slider, but only while the fullscreen lightbox is
+  // closed — it binds its own arrow handling.
+  useEffect(() => {
+    if (imageCount < 2 || lightboxIndex !== null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft")  showPrev();
+      if (e.key === "ArrowRight") showNext();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
 
   if (typeof document === "undefined") return null;
 
@@ -110,19 +132,76 @@ export default function PostLogDetailModal({ log, isOwner, onClose, onRequestEdi
             {log.content}
           </p>
 
-          {log.imageUrls.length > 0 && (
-            <div className={log.imageUrls.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
-              {log.imageUrls.map((url, i) => (
+          {imageCount > 0 && (
+            <div className="flex flex-col gap-2">
+              <div
+                className="relative rounded-lg overflow-hidden"
+                style={{ aspectRatio: "1/1", background: "var(--bg-tertiary)" }}
+                onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; swiped.current = false; }}
+                onTouchEnd={(e) => {
+                  const dx = e.changedTouches[0].clientX - touchStartX.current;
+                  if (imageCount < 2 || Math.abs(dx) < 40) return;
+                  swiped.current = true;
+                  if (dx < 0) showNext(); else showPrev();
+                }}
+              >
                 <button
-                  key={url}
                   type="button"
-                  onClick={() => setLightboxIndex(i)}
-                  className="relative rounded-lg overflow-hidden transition-opacity hover:opacity-90"
-                  style={{ aspectRatio: "1/1", background: "var(--bg-tertiary)" }}
+                  onClick={() => { if (swiped.current) { swiped.current = false; return; } setLightboxIndex(imageIndex); }}
+                  className="absolute inset-0 w-full h-full transition-opacity hover:opacity-90"
+                  aria-label={isJa ? "画像を拡大" : "View full size"}
                 >
-                  <Image src={url} alt="" fill sizes="480px" className="object-cover" />
+                  <Image
+                    src={log.imageUrls[imageIndex]}
+                    alt=""
+                    fill
+                    sizes="480px"
+                    className="object-cover"
+                  />
                 </button>
-              ))}
+
+                {imageCount > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={showPrev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                      style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}
+                      aria-label={isJa ? "前の画像" : "Previous image"}
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={showNext}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                      style={{ background: "rgba(0,0,0,0.55)", color: "#fff" }}
+                      aria-label={isJa ? "次の画像" : "Next image"}
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {imageCount > 1 && (
+                <div className="flex items-center justify-center gap-1.5">
+                  {log.imageUrls.map((url, i) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setImageIndex(i)}
+                      className="rounded-full transition-all"
+                      style={{
+                        width: 6,
+                        height: 6,
+                        background: i === imageIndex ? "var(--accent-primary)" : "var(--border-muted)",
+                      }}
+                      aria-label={`${isJa ? "画像" : "Image"} ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
