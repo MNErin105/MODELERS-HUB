@@ -301,7 +301,9 @@ export default function EditPostForm({ post }: { post: Post }) {
 
       if (deleteErr) throw new Error(deleteErr.message ?? "Failed to delete post.");
 
-      router.push("/");
+      // Back to the author's own profile — deleting from here used to drop
+      // you on the home feed, far from where the delete was started.
+      router.push(`/profile/${post.author.username}`);
       router.refresh();
     } catch (err) {
       console.error("[EditPostForm] delete error:", err);
