@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Category, Post, Author, PostLog } from "@/lib/types";
+import { CATEGORIES, Category, Post, Author, PostLog } from "@/lib/types";
 
 import WorkGrid from "@/components/ui/WorkGrid";
-import GenrePills from "@/components/ui/GenrePills";
+import SelectMenu, { SelectOption } from "@/components/ui/SelectMenu";
 import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
@@ -18,6 +18,9 @@ import { Camera, ChevronLeft, Layers, Bookmark, Heart, LogOut, Loader2, Pencil, 
 type Tab = "works" | "logs" | "liked" | "saved";
 type LogViewMode = "list" | "note";
 type SortOrder = "newest" | "oldest";
+
+// SelectMenu values are strings, so "no genre filter" needs a sentinel.
+const ALL_GENRES = "__all__";
 
 // Liked/Saved posts carry only the work's own createdAt — the like/save
 // timestamp isn't fetched — so every tab sorts by when the work was posted.
@@ -64,6 +67,7 @@ export default function ProfilePageClient({
   const tNav  = useTranslations("nav");
   const tLog  = useTranslations("profile.logView");
   const tSort = useTranslations("profile.sort");
+  const tCat  = useTranslations("category");
   const [activeTab, setActiveTab] = useState<Tab>("works");
   const [logViewMode, setLogViewMode] = useState<LogViewMode>("list");
   const [genre,     setGenre]     = useState<Category | null>(null);
@@ -87,6 +91,16 @@ export default function ProfilePageClient({
   function handleLogUpdated(updated: PostLog) {
     setPostLogsState((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
   }
+
+  const genreOptions: SelectOption<string>[] = [
+    { value: ALL_GENRES, label: tCat("all") },
+    ...CATEGORIES.map((cat) => ({ value: cat, label: tCat(`names.${cat.replace(/\s+/g, "_")}`) })),
+  ];
+
+  const sortOptions: SelectOption<SortOrder>[] = [
+    { value: "newest", label: tSort("newest") },
+    { value: "oldest", label: tSort("oldest") },
+  ];
 
   // Filters/sorting are scoped to the tab you're on — switching tabs clears them.
   function handleTabChange(tab: Tab) {
@@ -365,28 +379,14 @@ export default function ProfilePageClient({
 
         {/* Genre filter (all tabs) + sort (everything except Build Logs,
             which is newest-first by definition) */}
-        <div className="flex flex-col gap-3 mb-6">
-          <GenrePills active={genre} onChange={setGenre} />
+        <div className="flex flex-wrap gap-2 mb-6">
+          <SelectMenu
+            value={genre ?? ALL_GENRES}
+            options={genreOptions}
+            onChange={(v) => setGenre(v === ALL_GENRES ? null : (v as Category))}
+          />
           {activeTab !== "logs" && (
-            <div className="flex gap-2">
-              {(["newest", "oldest"] as SortOrder[]).map((order) => {
-                const active = sortOrder === order;
-                return (
-                  <button
-                    key={order}
-                    onClick={() => setSortOrder(order)}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-                    style={{
-                      background: active ? "var(--accent-primary)" : "var(--bg-secondary)",
-                      color:      active ? "var(--bg-primary)"     : "var(--text-secondary)",
-                      border:     `1px solid ${active ? "var(--accent-primary)" : "var(--border-subtle)"}`,
-                    }}
-                  >
-                    {tSort(order)}
-                  </button>
-                );
-              })}
-            </div>
+            <SelectMenu value={sortOrder} options={sortOptions} onChange={setSortOrder} />
           )}
         </div>
 
