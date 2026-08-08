@@ -122,6 +122,10 @@
       "note": "ノート",
       "empty": "ノートに表示できる作品がありません"
     },
+    "sort": {
+      "newest": "新しい順",
+      "oldest": "古い順"
+    },
     "edit": {
       "featuredWork": "看板作品",
       "clearSelection": "選択解除",

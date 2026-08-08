@@ -122,6 +122,10 @@
       "note": "Note",
       "empty": "No works to show in note view."
     },
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest"
+    },
     "edit": {
       "featuredWork": "Featured Work",
       "clearSelection": "Clear selection",

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { CATEGORIES, Category, PostLog } from "@/lib/types";
+import { Category, PostLog } from "@/lib/types";
 import { POSTS_PAGE_SIZE } from "@/lib/constants";
 import { getPostLogsFeed } from "@/lib/supabase/postLogsQueries";
+import GenrePills from "@/components/ui/GenrePills";
 import PostLogCard from "./PostLogCard";
 
 type Props = {
@@ -14,7 +14,6 @@ type Props = {
 };
 
 export default function PostLogFeedClient({ initialLogs, initialTotalCount }: Props) {
-  const tc = useTranslations("category");
   const [genre,      setGenre]      = useState<Category | null>(null);
   const [page,       setPage]       = useState(0);
   const [logs,       setLogs]       = useState(initialLogs);
@@ -66,36 +65,7 @@ export default function PostLogFeedClient({ initialLogs, initialTotalCount }: Pr
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button
-          onClick={() => handleGenreChange(null)}
-          className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all"
-          style={{
-            background: genre === null ? "var(--accent-primary)" : "var(--bg-secondary)",
-            color:      genre === null ? "var(--bg-primary)"     : "var(--text-secondary)",
-            border:     `1px solid ${genre === null ? "var(--accent-primary)" : "var(--border-subtle)"}`,
-          }}
-        >
-          {tc("all")}
-        </button>
-        {CATEGORIES.map((cat) => {
-          const active = genre === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => handleGenreChange(active ? null : cat)}
-              className="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all"
-              style={{
-                background: active ? "var(--accent-primary)" : "var(--bg-secondary)",
-                color:      active ? "var(--bg-primary)"     : "var(--text-secondary)",
-                border:     `1px solid ${active ? "var(--accent-primary)" : "var(--border-subtle)"}`,
-              }}
-            >
-              {tc(`names.${cat.replace(/\s+/g, "_")}`)}
-            </button>
-          );
-        })}
-      </div>
+      <GenrePills active={genre} onChange={handleGenreChange} className="flex flex-wrap gap-2 mb-6" />
 
       {loading ? (
         <div className="flex justify-center py-16">

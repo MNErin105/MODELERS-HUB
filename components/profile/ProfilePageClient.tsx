@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Post, Author, PostLog } from "@/lib/types";
+import { Category, Post, Author, PostLog } from "@/lib/types";
 
 import WorkGrid from "@/components/ui/WorkGrid";
+import GenrePills from "@/components/ui/GenrePills";
 import UserAvatar from "@/components/ui/UserAvatar";
 import FollowButton from "@/components/ui/FollowButton";
 import ProfileEditModal from "./ProfileEditModal";
@@ -16,6 +17,16 @@ import { Camera, ChevronLeft, Layers, Bookmark, Heart, LogOut, Loader2, Pencil, 
 
 type Tab = "works" | "logs" | "liked" | "saved";
 type LogViewMode = "list" | "note";
+type SortOrder = "newest" | "oldest";
+
+// Liked/Saved posts carry only the work's own createdAt — the like/save
+// timestamp isn't fetched — so every tab sorts by when the work was posted.
+function sortPosts(posts: Post[], order: SortOrder): Post[] {
+  return [...posts].sort((a, b) => {
+    const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    return order === "newest" ? -diff : diff;
+  });
+}
 
 type Props = {
   author: Author;
@@ -49,11 +60,14 @@ export default function ProfilePageClient({
   onSignOut, onUpdateAvatar,
   pinnedPostIds = [], onTogglePin, pinError,
 }: Props) {
-  const t    = useTranslations("profile");
-  const tNav = useTranslations("nav");
-  const tLog = useTranslations("profile.logView");
+  const t     = useTranslations("profile");
+  const tNav  = useTranslations("nav");
+  const tLog  = useTranslations("profile.logView");
+  const tSort = useTranslations("profile.sort");
   const [activeTab, setActiveTab] = useState<Tab>("works");
   const [logViewMode, setLogViewMode] = useState<LogViewMode>("list");
+  const [genre,     setGenre]     = useState<Category | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const [uploading, setUploading]   = useState(false);
   const [editOpen,  setEditOpen]    = useState(false);
   const [cropSrc,   setCropSrc]     = useState<string | null>(null);
@@ -74,14 +88,36 @@ export default function ProfilePageClient({
     setPostLogsState((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
   }
 
+  // Filters/sorting are scoped to the tab you're on — switching tabs clears them.
+  function handleTabChange(tab: Tab) {
+    setActiveTab(tab);
+    setGenre(null);
+    setSortOrder("newest");
+  }
+
+  const visiblePosts = useMemo(() => {
+    const apply = (posts: Post[]) =>
+      sortPosts(genre ? posts.filter((p) => p.categories.includes(genre)) : posts, sortOrder);
+    return {
+      works: apply(authorPosts),
+      liked: apply(likedPosts),
+      saved: apply(savedPosts),
+    };
+  }, [authorPosts, likedPosts, savedPosts, genre, sortOrder]);
+
+  const visibleLogs = useMemo(
+    () => (genre ? postLogsState.filter((l) => l.genre === genre) : postLogsState),
+    [postLogsState, genre],
+  );
+
   const pinnedSet = new Set(pinnedPostIds);
-  const pinnedPosts   = authorPosts.filter((p) => pinnedSet.has(p.id));
-  const unpinnedPosts = authorPosts.filter((p) => !pinnedSet.has(p.id));
+  const pinnedPosts   = visiblePosts.works.filter((p) => pinnedSet.has(p.id));
+  const unpinnedPosts = visiblePosts.works.filter((p) => !pinnedSet.has(p.id));
 
   const tabPosts: Record<Exclude<Tab, "logs">, Post[]> = {
-    works: authorPosts,
-    liked: likedPosts,
-    saved: savedPosts,
+    works: visiblePosts.works,
+    liked: visiblePosts.liked,
+    saved: visiblePosts.saved,
   };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number }[] = [
@@ -303,7 +339,7 @@ export default function ProfilePageClient({
             return (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => handleTabChange(tab.key)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
                 style={{
                   background: active ? "var(--accent-primary)" : "transparent",
@@ -325,6 +361,33 @@ export default function ProfilePageClient({
               </button>
             );
           })}
+        </div>
+
+        {/* Genre filter (all tabs) + sort (everything except Build Logs,
+            which is newest-first by definition) */}
+        <div className="flex flex-col gap-3 mb-6">
+          <GenrePills active={genre} onChange={setGenre} />
+          {activeTab !== "logs" && (
+            <div className="flex gap-2">
+              {(["newest", "oldest"] as SortOrder[]).map((order) => {
+                const active = sortOrder === order;
+                return (
+                  <button
+                    key={order}
+                    onClick={() => setSortOrder(order)}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
+                    style={{
+                      background: active ? "var(--accent-primary)" : "var(--bg-secondary)",
+                      color:      active ? "var(--bg-primary)"     : "var(--text-secondary)",
+                      border:     `1px solid ${active ? "var(--accent-primary)" : "var(--border-subtle)"}`,
+                    }}
+                  >
+                    {tSort(order)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Tab content */}
@@ -386,17 +449,17 @@ export default function ProfilePageClient({
 
             {logViewMode === "note" ? (
               <BuildLogNoteView
-                postLogs={postLogsState}
+                postLogs={visibleLogs}
                 onDeleted={handleLogDeleted}
                 onUpdated={handleLogUpdated}
               />
-            ) : postLogsState.length === 0 ? (
+            ) : visibleLogs.length === 0 ? (
               <p className="py-16 text-center" style={{ color: "var(--text-muted)" }}>
                 No build logs yet.
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl">
-                {postLogsState.map((log) => (
+                {visibleLogs.map((log) => (
                   <PostLogCard
                     key={log.id}
                     log={log}
