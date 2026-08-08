@@ -15,6 +15,10 @@ import PostLogLikeButton from "./PostLogLikeButton";
 import PostLogEditForm from "./PostLogEditForm";
 import PostLogDetailModal from "./PostLogDetailModal";
 
+const THUMB_SIZE   = 72;
+// How far the back of the deck peeks out behind the front thumbnail.
+const STACK_OFFSET = 7;
+
 function relativeTime(iso: string) {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60)          return `${Math.floor(diff)}s`;
@@ -89,7 +93,7 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
       </Link>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 flex-wrap pr-14">
+        <div className="flex items-baseline gap-2">
           <Link
             href={`/profile/${log.author.username}`}
             className="text-sm font-semibold hover:underline"
@@ -98,77 +102,109 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
           >
             {log.author.name}
           </Link>
-          <span className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+          <span className="text-xs truncate" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
             @{log.author.username} · {relativeTime(log.createdAt)}
           </span>
+
+          {isOwner && (
+            <div className="ml-auto flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
+                aria-label={isJa ? "編集" : "Edit"}
+              >
+                <Pencil size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(true)}
+                className="w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
+                aria-label={isJa ? "削除" : "Delete"}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          )}
         </div>
 
-        <p className="text-sm leading-snug mt-1 whitespace-pre-wrap line-clamp-3" style={{ color: "var(--text-secondary)" }}>
-          {log.content}
-        </p>
+        {/* Body: text on the left, image stack on the right */}
+        <div className="flex items-start gap-2.5 mt-1">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm leading-snug whitespace-pre-wrap line-clamp-3" style={{ color: "var(--text-secondary)" }}>
+              {log.content}
+            </p>
 
-        {log.imageUrls.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {log.imageUrls.map((url, i) => (
-              <button
-                key={url}
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }}
-                className="relative rounded-md overflow-hidden shrink-0 transition-opacity hover:opacity-90"
-                style={{ width: 72, height: 72, background: "var(--bg-tertiary)" }}
-                aria-label={isJa ? "画像を拡大" : "View image"}
+            {log.linkedPost && (
+              <Link
+                href={`/posts/${log.linkedPost.id}`}
+                className="flex items-center gap-1.5 mt-2 pr-2.5 rounded-lg w-fit max-w-full transition-opacity hover:opacity-80"
+                style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)" }}
+                onClick={(e) => e.stopPropagation()}
               >
-                <Image src={url} alt="" fill sizes="72px" className="object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
-
-        {log.linkedPost && (
-          <Link
-            href={`/posts/${log.linkedPost.id}`}
-            className="flex items-center gap-1.5 mt-2 pr-2.5 rounded-lg w-fit max-w-full transition-opacity hover:opacity-80"
-            style={{ background: "var(--bg-tertiary)", border: "1px solid var(--border-subtle)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {log.linkedPost.thumbnailUrl && (
-              <div className="relative w-6 h-6 rounded-md overflow-hidden shrink-0">
-                <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="24px" className="object-cover" />
-              </div>
+                {log.linkedPost.thumbnailUrl && (
+                  <div className="relative w-6 h-6 rounded-md overflow-hidden shrink-0">
+                    <Image src={log.linkedPost.thumbnailUrl} alt="" fill sizes="24px" className="object-cover" />
+                  </div>
+                )}
+                <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
+                  {log.linkedPost.title}
+                </span>
+              </Link>
             )}
-            <span className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
-              {log.linkedPost.title}
-            </span>
-          </Link>
-        )}
 
-        <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
-          <PostLogLikeButton postLogId={log.id} count={log.likeCount} />
+            <div className="mt-1.5" onClick={(e) => e.stopPropagation()}>
+              <PostLogLikeButton postLogId={log.id} count={log.likeCount} />
+            </div>
+          </div>
+
+          {log.imageUrls.length > 0 && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(0); }}
+              className="relative shrink-0 transition-opacity hover:opacity-90"
+              style={{
+                width:  THUMB_SIZE + (log.imageUrls.length > 1 ? STACK_OFFSET : 0),
+                height: THUMB_SIZE + (log.imageUrls.length > 1 ? STACK_OFFSET : 0),
+              }}
+              aria-label={isJa ? "画像を拡大" : "View image"}
+            >
+              {/* Back of the deck — decorative; the whole stack is one target. */}
+              {log.imageUrls.length > 1 && (
+                <span
+                  aria-hidden
+                  className="absolute rounded-md overflow-hidden pointer-events-none"
+                  style={{
+                    width: THUMB_SIZE, height: THUMB_SIZE,
+                    top: STACK_OFFSET, left: STACK_OFFSET,
+                    transform: "rotate(6deg)",
+                    border: "2px solid var(--bg-secondary)",
+                    background: "var(--bg-tertiary)",
+                  }}
+                >
+                  <Image src={log.imageUrls[1]} alt="" fill sizes="72px" className="object-cover" />
+                </span>
+              )}
+              <span
+                className="absolute rounded-md overflow-hidden"
+                style={{
+                  width: THUMB_SIZE, height: THUMB_SIZE,
+                  top: 0, left: 0,
+                  border: "2px solid var(--bg-secondary)",
+                  background: "var(--bg-tertiary)",
+                  // Lifts the front thumbnail off the one behind it, so the
+                  // stack reads as multiple photos even when they look alike.
+                  boxShadow: log.imageUrls.length > 1 ? "0 2px 8px rgba(0,0,0,0.6)" : "none",
+                }}
+              >
+                <Image src={log.imageUrls[0]} alt="" fill sizes="72px" className="object-cover" />
+              </span>
+            </button>
+          )}
         </div>
       </div>
-
-      {isOwner && (
-        <div className="absolute top-2.5 right-2.5 flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
-            aria-label={isJa ? "編集" : "Edit"}
-          >
-            <Pencil size={12} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setConfirmOpen(true)}
-            className="w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-            style={{ background: "var(--bg-tertiary)", color: "var(--text-muted)" }}
-            aria-label={isJa ? "削除" : "Delete"}
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      )}
 
       {detailOpen && (
         <PostLogDetailModal
