@@ -479,7 +479,7 @@ function HeaderInner() {
                 aria-label={isJa ? "投稿する" : "Post"}
               >
                 <PlusSquare size={15} />
-                <span className="hidden md:inline">{isJa ? "投稿する" : "Post"}</span>
+                <span>{isJa ? "投稿する" : "Post"}</span>
                 <ChevronDown size={14} style={{ transform: postMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
               </button>
               {postMenuOpen && <PostMenuDropdown onClose={closePostMenu} locale={locale} />}
