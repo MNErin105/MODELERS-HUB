@@ -182,6 +182,10 @@ export default function PostLogCard({ log: initialLog, onDeleted, onUpdated }: P
                     transform: "rotate(6deg)",
                     border: "2px solid var(--bg-secondary)",
                     background: "var(--bg-tertiary)",
+                    // Desaturated so the back of the deck recedes without
+                    // going fully monochrome, which reads as a dead grey
+                    // patch against the dark/gold palette.
+                    filter: "grayscale(65%) brightness(0.8)",
                   }}
                 >
                   <Image src={log.imageUrls[1]} alt="" fill sizes="72px" className="object-cover" />
