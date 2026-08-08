@@ -3,6 +3,7 @@ import { Bebas_Neue, DM_Sans, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import Header from "@/components/layout/Header";
+import MobileSearchRow from "@/components/layout/MobileSearchRow";
 import Footer from "@/components/layout/Footer";
 import LoginModal from "@/components/layout/LoginModal";
 import { AppProvider } from "@/lib/context/AppContext";
@@ -69,6 +70,7 @@ export default function RootLayout({
             <NotificationProvider>
               <AppProvider>
                 <Header />
+                <MobileSearchRow />
                 <main className="flex-1">{children}</main>
                 <Footer />
                 <LoginModal />

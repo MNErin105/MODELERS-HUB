@@ -343,9 +343,11 @@ export default function ProfilePageClient({
           </div>
         </div>
 
-        {/* Tab bar */}
+        {/* Tab bar — scrolls sideways on narrow screens instead of clipping
+            the last tab. Negative margin lets it run to the screen edges. */}
+        <div className="overflow-x-auto -mx-6 px-6 mb-8">
         <div
-          className="flex gap-1 mb-8 p-1 rounded-xl w-fit"
+          className="flex gap-1 p-1 rounded-xl w-max"
           style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-subtle)" }}
         >
           {tabs.map((tab) => {
@@ -375,6 +377,7 @@ export default function ProfilePageClient({
               </button>
             );
           })}
+        </div>
         </div>
 
         {/* Genre filter (all tabs) + sort (everything except Build Logs,

@@ -6,6 +6,7 @@ import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus, Info, CheckCheck, Trophy, Bug, ChevronDown, Rss } from "lucide-react";
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
+import LocaleToggle from "@/components/layout/LocaleToggle";
 import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileAvatarButton from "@/components/layout/ProfileAvatarButton";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -18,29 +19,6 @@ const AUTH_LABELS = {
   signOut: "Sign out",
   myPage:  "My Page",
 } as const;
-
-// ── Locale toggle ─────────────────────────────────────────────────────────────
-
-function LocaleToggle() {
-  const { locale, setLocale } = useLocale();
-  return (
-    <div className="flex items-center gap-1 text-sm shrink-0" style={{ color: "var(--text-secondary)" }}>
-      <button
-        onClick={() => setLocale("en")}
-        className="px-2 py-1 rounded transition-colors"
-        style={{ color: locale === "en" ? "var(--accent-primary)" : "var(--text-secondary)", fontWeight: locale === "en" ? 600 : 400 }}
-        aria-label="Switch to English"
-      >EN</button>
-      <span style={{ color: "var(--border-muted)" }}>|</span>
-      <button
-        onClick={() => setLocale("ja")}
-        className="px-2 py-1 rounded transition-colors"
-        style={{ color: locale === "ja" ? "var(--accent-primary)" : "var(--text-secondary)", fontWeight: locale === "ja" ? 600 : 400 }}
-        aria-label="Switch to Japanese"
-      >JP</button>
-    </div>
-  );
-}
 
 // ── Notification icon per type ─────────────────────────────────────────────────
 
@@ -308,32 +286,6 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
       style={{ background: "var(--bg-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
     >
       <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col gap-4">
-        <SearchBar />
-
-        {/* New work post */}
-        <div className="relative">
-          <Link
-            href="/posts/new"
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-          >
-            <PlusSquare size={15} /> {isJa ? "作品投稿" : "New Work"}
-          </Link>
-        </div>
-
-        {/* New post log */}
-        <div className="relative">
-          <Link
-            href="/build-logs/new"
-            onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
-            style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-          >
-            <Rss size={15} /> {isJa ? "制作ログ" : "Build Log"}
-          </Link>
-        </div>
-
         {/* Ranking teaser */}
         <div className="relative">
           <button
@@ -504,24 +456,6 @@ function HeaderInner() {
         {/* Right controls */}
         <div className="ml-auto flex items-center gap-2 shrink-0">
 
-          {/* Post button — desktop, logged-in only. Toggles a 2-choice dropdown
-              (new work post vs. quick post log) instead of navigating directly. */}
-          {!loading && user && (
-            <div className="relative hidden md:flex">
-              <button
-                onClick={() => setPostMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
-                style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
-                aria-label={isJa ? "投稿する" : "Post"}
-              >
-                <PlusSquare size={15} />
-                <span>{isJa ? "投稿する" : "Post"}</span>
-                <ChevronDown size={14} style={{ transform: postMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
-              </button>
-              {postMenuOpen && <PostMenuDropdown onClose={closePostMenu} locale={locale} />}
-            </div>
-          )}
-
           {/* Build Logs — icon-only, always visible on both desktop and mobile */}
           <Link
             href="/build-logs"
@@ -533,7 +467,26 @@ function HeaderInner() {
             <Rss size={18} />
           </Link>
 
-          {/* Locale toggle — desktop, always visible */}
+          {/* Post button — logged-in only, both breakpoints. Toggles a 2-choice
+              dropdown (new work vs. build log) instead of navigating directly.
+              Icon-only on mobile, where the header has no room for the label. */}
+          {!loading && user && (
+            <div className="relative flex">
+              <button
+                onClick={() => setPostMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 px-2.5 py-2 md:px-4 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                style={{ background: "var(--accent-primary)", color: "var(--bg-primary)" }}
+                aria-label={isJa ? "投稿する" : "Post"}
+              >
+                <PlusSquare size={15} />
+                <span className="hidden md:inline">{isJa ? "投稿する" : "Post"}</span>
+                <ChevronDown size={14} style={{ transform: postMenuOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s ease" }} />
+              </button>
+              {postMenuOpen && <PostMenuDropdown onClose={closePostMenu} locale={locale} />}
+            </div>
+          )}
+
+          {/* Locale toggle — desktop only; mobile has it in MobileSearchRow */}
           <div className="hidden md:flex">
             <LocaleToggle />
           </div>
@@ -574,11 +527,6 @@ function HeaderInner() {
               )}
             </button>
             {moreMenuOpen && <MoreMenuDropdown onClose={closeMoreMenu} locale={locale} />}
-          </div>
-
-          {/* Locale toggle — mobile only, always visible */}
-          <div className="flex md:hidden">
-            <LocaleToggle />
           </div>
 
           {/* Mobile hamburger */}
