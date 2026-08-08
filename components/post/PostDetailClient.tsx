@@ -39,11 +39,11 @@ export default function PostDetailClient({ post }: Props) {
       {/* Back link */}
       <div className="max-w-[1440px] mx-auto px-6 pt-8 pb-4">
         <Link
-          href="/"
+          href={`/profile/${post.author.username}`}
           className="inline-flex items-center gap-1.5 text-sm hover:opacity-80 transition-opacity"
           style={{ color: "var(--text-secondary)" }}
         >
-          <ChevronLeft size={16} /> {t("backToArchive")}
+          <ChevronLeft size={16} /> {t("backToAuthorWorks", { name: post.author.name })}
         </Link>
       </div>
 

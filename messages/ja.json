@@ -68,7 +68,7 @@
     }
   },
   "post": {
-    "backToArchive": "一覧に戻る",
+    "backToAuthorWorks": "{name}の作品一覧に戻る",
     "edit": "編集",
     "tabs": {
       "works": "作品",

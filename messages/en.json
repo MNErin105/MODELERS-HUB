@@ -68,7 +68,7 @@
     }
   },
   "post": {
-    "backToArchive": "Back to archive",
+    "backToAuthorWorks": "Back to {name}'s works",
     "edit": "Edit",
     "tabs": {
       "works": "Works",
