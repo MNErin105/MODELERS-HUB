@@ -1,20 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { AuthUser } from "@/lib/context/AuthContext";
 
 type Props = {
   user: AuthUser;
   size?: number;
-  // Future: onMenuOpen?: () => void  (for dropdown)
+  onClick: () => void;
 };
 
-export default function ProfileAvatarButton({ user, size = 34 }: Props) {
+// Opens the account dropdown (My Page / Sign out) instead of navigating —
+// the header renders AvatarDropdown alongside it.
+export default function ProfileAvatarButton({ user, size = 34, onClick }: Props) {
   return (
-    <Link
-      href="/mypage"
-      aria-label="My Page"
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Account menu"
+      aria-haspopup="menu"
       className="block rounded-full overflow-hidden shrink-0 transition-all hover:opacity-80 hover:scale-105 active:scale-95"
       style={{
         width:  size,
@@ -23,6 +26,6 @@ export default function ProfileAvatarButton({ user, size = 34 }: Props) {
       }}
     >
       <UserAvatar src={user.avatarUrl} alt={user.name} fill />
-    </Link>
+    </button>
   );
 }

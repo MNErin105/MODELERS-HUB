@@ -7,7 +7,6 @@ import { PlusSquare, Bell, Menu, X, LogOut, User, Heart, MessageSquare, UserPlus
 import { useTranslations } from "next-intl";
 import SearchBar from "@/components/ui/SearchBar";
 import LocaleToggle from "@/components/layout/LocaleToggle";
-import UserAvatar from "@/components/ui/UserAvatar";
 import ProfileAvatarButton from "@/components/layout/ProfileAvatarButton";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useNotifications, NotificationItem } from "@/lib/context/NotificationContext";
@@ -136,7 +135,7 @@ function AvatarDropdown({ onClose }: { onClose: () => void }) {
         <p className="text-xs truncate" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>@{user.username}</p>
       </div>
       <Link
-        href="/profile/self"
+        href="/mypage"
         onClick={onClose}
         className="flex items-center gap-2 px-4 py-3 text-sm transition-colors hover:opacity-80"
         style={{ color: "var(--text-secondary)", borderBottom: "1px solid var(--border-subtle)" }}
@@ -274,7 +273,6 @@ function MoreMenuDropdown({ onClose, locale }: { onClose: () => void; locale: st
 // ── Mobile menu ───────────────────────────────────────────────────────────────
 
 function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }) {
-  const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const [rankingOpen, setRankingOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -326,37 +324,13 @@ function MobileMenu({ onClose, locale }: { onClose: () => void; locale: string }
             href={BUG_REPORT_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={onClose}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold w-fit"
             style={{ background: "var(--bg-tertiary)", color: "var(--text-secondary)", border: "1px solid var(--border-subtle)" }}
           >
             <Bug size={15} /> {isJa ? "バグ報告" : "Report a Bug"}
           </a>
         </div>
-
-        {user && (
-          <div style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative w-8 h-8 rounded-full overflow-hidden" style={{ border: "2px solid var(--accent-muted)" }}>
-                  <UserAvatar src={user.avatarUrl} alt={user.name} fill />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{user.name}</p>
-                  <Link href="/mypage" onClick={onClose} className="text-xs hover:opacity-80" style={{ color: "var(--accent-primary)" }}>
-                    {AUTH_LABELS.myPage}
-                  </Link>
-                </div>
-              </div>
-              <button
-                onClick={() => { signOut(); onClose(); }}
-                className="flex items-center gap-1.5 text-sm hover:opacity-80"
-                style={{ color: "var(--text-muted)" }}
-              >
-                <LogOut size={14} /> {AUTH_LABELS.signOut}
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -417,13 +391,15 @@ function HeaderInner() {
   const { locale } = useLocale();
   const isJa = locale === "ja";
 
-  const [menuOpen,     setMenuOpen]     = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [postMenuOpen, setPostMenuOpen] = useState(false);
+  const [menuOpen,       setMenuOpen]       = useState(false);
+  const [moreMenuOpen,   setMoreMenuOpen]   = useState(false);
+  const [postMenuOpen,   setPostMenuOpen]   = useState(false);
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
-  const closeMenu     = useCallback(() => setMenuOpen(false),     []);
-  const closeMoreMenu = useCallback(() => setMoreMenuOpen(false), []);
-  const closePostMenu = useCallback(() => setPostMenuOpen(false), []);
+  const closeMenu       = useCallback(() => setMenuOpen(false),       []);
+  const closeMoreMenu   = useCallback(() => setMoreMenuOpen(false),   []);
+  const closePostMenu   = useCallback(() => setPostMenuOpen(false),   []);
+  const closeAvatarMenu = useCallback(() => setAvatarMenuOpen(false), []);
 
   return (
     <header
@@ -491,9 +467,12 @@ function HeaderInner() {
             <LocaleToggle />
           </div>
 
-          {/* Sign in always visible; avatar once auth resolves */}
+          {/* Sign in always visible; avatar (with its account menu) once auth resolves */}
           {!loading && user ? (
-            <ProfileAvatarButton user={user} />
+            <div className="relative flex">
+              <ProfileAvatarButton user={user} onClick={() => setAvatarMenuOpen((v) => !v)} />
+              {avatarMenuOpen && <AvatarDropdown onClose={closeAvatarMenu} />}
+            </div>
           ) : (
             <button
               onClick={openLoginModal}
