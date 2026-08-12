@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { Pencil, Palette } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { Post } from "@/lib/types";
 import TagBadge from "@/components/ui/TagBadge";
@@ -11,6 +11,7 @@ import SaveButton from "@/components/ui/SaveButton";
 import LikeButton from "@/components/ui/LikeButton";
 import FollowButton from "@/components/ui/FollowButton";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import ColorRecipeViewer from "./ColorRecipeViewer";
 import UserAvatar from "@/components/ui/UserAvatar";
 import { categorySlug } from "@/lib/types";
 import { useAuth } from "@/lib/context/AuthContext";
@@ -30,6 +31,7 @@ export default function WorksTab({ post }: Props) {
 
   const [activeIdx, setActiveIdx]       = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [recipeOpen, setRecipeOpen]     = useState(false);
   const [translatedText,  setTranslatedText]  = useState<string | null>(null);
   const [isTranslating,   setIsTranslating]   = useState(false);
   const [showTranslation, setShowTranslation] = useState(false);
@@ -91,6 +93,21 @@ export default function WorksTab({ post }: Props) {
             className="object-cover"
             style={{ objectPosition: "center 20%" }}
           />
+          {/* Colour recipe. Visitors only see this once tags exist; the author
+              always does, so they can start one. The gallery crops with
+              object-cover, so tags open in their own uncropped view. */}
+          {active.postImageId && ((active.recipeTagCount ?? 0) > 0 || isAuthor) && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setRecipeOpen(true); }}
+              className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-90"
+              style={{ background: "rgba(10,10,11,0.78)", color: "var(--accent-primary)", border: "1px solid var(--border-subtle)" }}
+            >
+              <Palette size={13} />
+              {(active.recipeTagCount ?? 0) > 0 ? t("colorRecipe.view") : t("colorRecipe.create")}
+            </button>
+          )}
+
           {/* Caption */}
           <div
             className="absolute bottom-0 left-0 right-0 px-4 py-2 text-sm"
@@ -129,14 +146,6 @@ export default function WorksTab({ post }: Props) {
                 sizes="72px"
                 className="object-contain"
               />
-              {img.isPaintTool && (
-                <span
-                  className="absolute bottom-0 left-0 right-0 py-0.5 text-center text-[8px] font-bold tracking-wide"
-                  style={{ background: "rgba(10,10,11,0.75)", color: "var(--accent-primary)", fontFamily: "var(--font-mono)" }}
-                >
-                  PAINT/TOOL
-                </span>
-              )}
             </button>
           ))}
         </div>
@@ -272,6 +281,15 @@ export default function WorksTab({ post }: Props) {
         images={post.images}
         initialIndex={activeIdx}
         onClose={() => setLightboxOpen(false)}
+      />
+    )}
+
+    {recipeOpen && active.postImageId && (
+      <ColorRecipeViewer
+        postImageId={active.postImageId}
+        imageUrl={active.url}
+        isOwner={isAuthor}
+        onClose={() => setRecipeOpen(false)}
       />
     )}
     </>

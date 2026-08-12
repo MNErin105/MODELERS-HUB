@@ -2,10 +2,10 @@
 
 import { useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Send, AlertCircle } from "lucide-react";
+import { ChevronLeft, Send, AlertCircle, Palette } from "lucide-react";
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
-import { CATEGORIES, Category } from "@/lib/types";
+import { CATEGORIES, Category, DraftColorRecipeTag } from "@/lib/types";
 import { buildSuggestions } from "@/lib/tagTranslations";
 import { CATEGORY_META } from "@/lib/types";
 import { prepareFile, StoredFile } from "@/lib/imageUtils";
@@ -16,6 +16,8 @@ import ImageUploadZone from "./ImageUploadZone";
 import ImagePreviewGrid, { UploadedImage } from "./ImagePreviewGrid";
 import TagInput from "./TagInput";
 import PaintTagInput from "./PaintTagInput";
+import ColorRecipePhotoPicker from "./ColorRecipePhotoPicker";
+import ColorRecipeDraftEditor from "./ColorRecipeDraftEditor";
 
 // ── Suggested tag values (stored in DB as English) ───────────────────────────
 const TOOL_VALUES = [
@@ -107,9 +109,11 @@ export default function NewPostForm() {
   const [coverImages, setCoverImages] = useState<UploadedImage[]>([]);
   const coverFileMap = useRef(new Map<string, StoredFile>());
 
-  // Paint/tool reference photos — optional, max 3, separate table (post_paint_tool_images)
-  const [paintToolImages, setPaintToolImages] = useState<UploadedImage[]>([]);
-  const paintToolFileMap = useRef(new Map<string, StoredFile>());
+  // Colour recipe tags, keyed by the local (pre-upload) image id. They are
+  // written to color_recipe_tags in one batch after post_images is inserted.
+  const [recipeTags,     setRecipeTags]     = useState<Record<string, DraftColorRecipeTag[]>>({});
+  const [pickerOpen,     setPickerOpen]     = useState(false);
+  const [taggingImageId, setTaggingImageId] = useState<string | null>(null);
 
   // SNS repost permission (default: allowed)
   const [allowSnsRepost, setAllowSnsRepost] = useState(true);
@@ -136,29 +140,36 @@ export default function NewPostForm() {
   const deleteImage    = useCallback((id: string) => {
     coverFileMap.current.delete(id);
     setCoverImages((p) => p.filter((i) => i.id !== id));
+    // Drop the tags with the photo they belong to.
+    setRecipeTags((prev) => {
+      if (!(id in prev)) return prev;
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setTaggingImageId((cur) => (cur === id ? null : cur));
   }, []);
   const updateCaption  = useCallback((id: string, cap: string) =>
     setCoverImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
 
-  const addPaintToolImages = useCallback(async (files: File[]) => {
-    const entries = await Promise.all(
-      files.map(async (file) => {
-        const { previewUrl, stored } = await prepareFile(file);
-        const preview: UploadedImage = { id: uid(), url: previewUrl, caption: "" };
-        paintToolFileMap.current.set(preview.id, stored);
-        return preview;
-      }),
-    );
-    setPaintToolImages((prev) => [...prev, ...entries].slice(0, 3));
-  }, []);
+  // ── Colour recipe handlers ──────────────────────────────────────────────────
+  const tagCounts = useMemo(
+    () => Object.fromEntries(Object.entries(recipeTags).map(([id, list]) => [id, list.length])),
+    [recipeTags],
+  );
+  const totalRecipeTags = useMemo(
+    () => Object.values(recipeTags).reduce((sum, list) => sum + list.length, 0),
+    [recipeTags],
+  );
 
-  const reorderPaintToolImages = useCallback((imgs: UploadedImage[]) => setPaintToolImages(imgs), []);
-  const deletePaintToolImage   = useCallback((id: string) => {
-    paintToolFileMap.current.delete(id);
-    setPaintToolImages((p) => p.filter((i) => i.id !== id));
-  }, []);
-  const updatePaintToolCaption = useCallback((id: string, cap: string) =>
-    setPaintToolImages((p) => p.map((i) => i.id === id ? { ...i, caption: cap } : i)), []);
+  function openRecipeFlow() {
+    if (coverImages.length === 0) return;
+    // With a single photo there's nothing to choose — go straight to tagging.
+    if (coverImages.length === 1) setTaggingImageId(coverImages[0].id);
+    else setPickerOpen(true);
+  }
+
+  const taggingImage = coverImages.find((img) => img.id === taggingImageId) ?? null;
 
   // ── Validation ──────────────────────────────────────────────────────────────
   function validate() {
@@ -222,40 +233,50 @@ export default function NewPostForm() {
         imageUrls.push(urlData.publicUrl);
       }
 
-      // 3. INSERT post_images
+      // 3. INSERT post_images, keeping the ids so colour recipe tags can be
+      //    attached to the right row.
       if (imageUrls.length > 0) {
         const imageRows = coverImages.map((img, i) => ({
+          localId:    img.id,
           post_id:    postId,
           image_url:  imageUrls[i] ?? "",
           caption:    img.caption.trim() || null,
           sort_order: i,
         })).filter((r) => r.image_url);
-        await supabase.from("post_images").insert(imageRows);
-      }
 
-      // 3b. Upload + INSERT paint/tool reference images
-      if (paintToolImages.length > 0) {
-        const paintToolUrls: string[] = [];
-        for (let i = 0; i < paintToolImages.length; i++) {
-          const img    = paintToolImages[i];
-          const stored = paintToolFileMap.current.get(img.id);
-          if (!stored) throw new Error("画像の参照が失われました。もう一度画像を選択してください。");
-          const path = `${user.id}/${postId}-paint-${i}.${stored.ext}`;
-          const { error: upErr } = await supabase.storage
-            .from("post-images")
-            .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
-          if (upErr) throw new Error((upErr as { message?: string })?.message ?? "Image upload failed.");
-          const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(path);
-          paintToolUrls.push(urlData.publicUrl);
+        const { data: insertedImages } = await supabase
+          .from("post_images")
+          .insert(imageRows.map((r) => ({
+            post_id: r.post_id, image_url: r.image_url, caption: r.caption, sort_order: r.sort_order,
+          })))
+          .select("id, image_url");
+
+        // 3b. Colour recipe tags — best effort; a failure here shouldn't cost
+        //     the user the post itself.
+        if (totalRecipeTags > 0 && insertedImages) {
+          const idByUrl = new Map(
+            (insertedImages as { id: string; image_url: string }[]).map((r) => [r.image_url, r.id]),
+          );
+          const recipeRows = imageRows.flatMap((row) =>
+            (recipeTags[row.localId] ?? []).map((tag, i) => {
+              const postImageId = idByUrl.get(row.image_url);
+              return postImageId
+                ? {
+                    post_image_id: postImageId,
+                    pin_x: tag.pin.x, pin_y: tag.pin.y,
+                    box_x: tag.box.x, box_y: tag.box.y,
+                    color_hex:  tag.colorHex,
+                    content:    tag.content.trim() || null,
+                    sort_order: i,
+                  }
+                : null;
+            }).filter((r) => r !== null),
+          );
+          if (recipeRows.length > 0) {
+            const { error: recipeErr } = await supabase.from("color_recipe_tags").insert(recipeRows);
+            if (recipeErr) console.error("[NewPostForm] color recipe insert failed:", recipeErr);
+          }
         }
-
-        const paintToolRows = paintToolImages.map((img, i) => ({
-          post_id:    postId,
-          image_url:  paintToolUrls[i] ?? "",
-          caption:    img.caption.trim() || null,
-          sort_order: i,
-        })).filter((r) => r.image_url);
-        await supabase.from("post_paint_tool_images").insert(paintToolRows);
       }
 
       // 4. Tags — insert-or-ignore, then SELECT to get id
@@ -364,20 +385,31 @@ export default function NewPostForm() {
                 {t("imageOrderHint")}
               </p>
             )}
-          </Section>
 
-          {/* ── Paint/tool reference photos ─────────────────────────────── */}
-          <Section title={t("sections.paintTools")}>
-            <ImageUploadZone onFilesAdded={addPaintToolImages} currentCount={paintToolImages.length} max={3} />
-            <ImagePreviewGrid
-              images={paintToolImages}
-              onReorder={reorderPaintToolImages}
-              onDelete={deletePaintToolImage}
-              onCaptionChange={updatePaintToolCaption}
-            />
-            <p className="text-xs" style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-              {t("paintToolImageHint")}
-            </p>
+            {/* ── Colour recipe entry point (optional) ─────────────────── */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openRecipeFlow}
+                disabled={coverImages.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  background: "var(--bg-secondary)",
+                  color:      "var(--text-secondary)",
+                  border:     "1px solid var(--border-subtle)",
+                }}
+              >
+                <Palette size={15} style={{ color: "var(--accent-primary)" }} />
+                {t("colorRecipe.add")}
+              </button>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                {coverImages.length === 0
+                  ? t("colorRecipe.needPhoto")
+                  : totalRecipeTags > 0
+                    ? t("colorRecipe.count", { count: totalRecipeTags })
+                    : t("colorRecipe.hint")}
+              </p>
+            </div>
           </Section>
 
           {/* ── Core info ────────────────────────────────────────────────── */}
@@ -522,6 +554,24 @@ export default function NewPostForm() {
 
         </form>
       </div>
+
+      {pickerOpen && (
+        <ColorRecipePhotoPicker
+          images={coverImages}
+          tagCounts={tagCounts}
+          onSelect={(imageId) => { setPickerOpen(false); setTaggingImageId(imageId); }}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
+
+      {taggingImage && (
+        <ColorRecipeDraftEditor
+          imageUrl={taggingImage.url}
+          tags={recipeTags[taggingImage.id] ?? []}
+          onChange={(next) => setRecipeTags((prev) => ({ ...prev, [taggingImage.id]: next }))}
+          onClose={() => setTaggingImageId(null)}
+        />
+      )}
     </div>
   );
 }

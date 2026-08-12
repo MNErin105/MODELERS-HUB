@@ -29,8 +29,16 @@ export const DB_TO_CATEGORY: Record<string, Category> = {
 
 type RawLike      = { user_id: string; created_at: string };
 type RawBookmark  = { user_id: string };
-type RawImage     = { image_url: string; caption: string | null; author_comment: string | null; sort_order: number };
-type RawPaintToolImage = { image_url: string; caption: string | null; sort_order: number };
+type RawImage     = {
+  id?: string;
+  image_url: string;
+  caption: string | null;
+  author_comment: string | null;
+  sort_order: number;
+  // Ids only — just enough to know whether the "view colour recipe" button
+  // should appear. The tags themselves load on demand.
+  color_recipe_tags?: { id: string }[];
+};
 type RawTag       = { tags: { name: string } | null };
 type RawPaint     = { paint_name: string };
 type RawTool      = { tool_name: string };
@@ -47,7 +55,6 @@ type RawPost = {
   allow_sns_repost: boolean | null;
   profiles: RawProfile | null;
   post_images: RawImage[];
-  post_paint_tool_images: RawPaintToolImage[];
   post_tags: RawTag[];
   post_paints: RawPaint[];
   post_tools: RawTool[];
@@ -60,7 +67,6 @@ type RawPost = {
 
 function rawToPost(raw: RawPost): Post {
   const sortedImages = [...(raw.post_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-  const sortedPaintToolImages = [...(raw.post_paint_tool_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
 
   const author: Author = raw.profiles
     ? {
@@ -75,18 +81,13 @@ function rawToPost(raw: RawPost): Post {
       }
     : { id: "unknown", username: "unknown", name: "Unknown", avatarUrl: "", country: "", bio: "", followersCount: 0, followingCount: 0 };
 
-  const images: WorkPhoto[] = [
-    ...sortedImages.map((img) => ({
-      url:           img.image_url,
-      caption:       img.caption ?? "",
-      authorComment: img.author_comment ?? null,
-    })),
-    ...sortedPaintToolImages.map((img) => ({
-      url:         img.image_url,
-      caption:     img.caption ?? "",
-      isPaintTool: true,
-    })),
-  ];
+  const images: WorkPhoto[] = sortedImages.map((img) => ({
+    url:            img.image_url,
+    caption:        img.caption ?? "",
+    authorComment:  img.author_comment ?? null,
+    postImageId:    img.id,
+    recipeTagCount: (img.color_recipe_tags ?? []).length,
+  }));
 
   const tags = raw.post_tags
     .map((pt) => pt.tags?.name)
@@ -120,8 +121,7 @@ function rawToPost(raw: RawPost): Post {
 const POST_SELECT = [
   "id", "title", "description", "categories", "kit_name", "created_at", "allow_sns_repost",
   "profiles!user_id (id, username, display_name, avatar_url, country, bio)",
-  "post_images (image_url, caption, author_comment, sort_order)",
-  "post_paint_tool_images (image_url, caption, sort_order)",
+  "post_images (id, image_url, caption, author_comment, sort_order, color_recipe_tags (id))",
   "post_tags (tags (name))",
   "post_paints (paint_name)",
   "post_tools (tool_name)",

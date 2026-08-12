@@ -91,8 +91,38 @@ export type WorkPhoto = {
   caption: string;
   /** Author's per-image comment — shown only in the fullscreen lightbox, not in feed. */
   authorComment?: string | null;
-  /** True for photos from post_paint_tool_images (paints/tools used), rather than the main post_images gallery. */
-  isPaintTool?: boolean;
+  /** post_images.id — the anchor for colour recipe tags. */
+  postImageId?: string;
+  /** How many colour recipe tags this image has; the tags themselves load on demand. */
+  recipeTagCount?: number;
+};
+
+/**
+ * An annotation on a post image: a pin on the photo, a line, and a box with a
+ * colour swatch plus free text. Coordinates are fractions of the image (0-1),
+ * so they survive the many sizes the same photo renders at.
+ */
+export type ColorRecipeTag = {
+  id: string;
+  postImageId: string;
+  pin: { x: number; y: number };
+  box: { x: number; y: number };
+  colorHex: string;
+  content: string;
+  sortOrder: number;
+};
+
+/**
+ * A colour recipe tag on a photo that hasn't been uploaded yet. `id` is a
+ * client-side uuid used only to key the tag while the post form is open; the
+ * real rows are inserted once the images have a post_images.id.
+ */
+export type DraftColorRecipeTag = {
+  id: string;
+  pin: { x: number; y: number };
+  box: { x: number; y: number };
+  colorHex: string;
+  content: string;
 };
 
 export type CommentReply = {

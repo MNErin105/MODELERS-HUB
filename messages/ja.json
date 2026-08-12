@@ -90,6 +90,22 @@
       "authorBadge": "投稿者",
       "aiFaq": "スレッドのよくある質問を自動生成 — 近日公開予定。"
     },
+    "colorRecipe": {
+      "title": "カラーレシピ",
+      "view": "カラーレシピを見る",
+      "create": "カラーレシピを追加",
+      "close": "閉じる",
+      "empty": "この画像にはまだカラーレシピがありません",
+      "emptyOwner": "「編集」→「追加」からカラーレシピを作成できます",
+      "edit": "編集",
+      "done": "完了",
+      "add": "追加",
+      "delete": "削除",
+      "pickColor": "色を調整",
+      "placePin": "ピンを配置",
+      "tapToPlace": "写真上をタップまたはドラッグしてピンを配置",
+      "placeholder": "例: MrカラーGX1 ホワイト70% + クレオスC69マホガニー30%"
+    },
     "buildLog": {
       "edit": "編集",
       "done": "完了",
@@ -221,13 +237,19 @@
     "deleteConfirm": "削除する",
     "deleting": "削除中…",
     "imageOrderHint": "ドラッグで並び替え · 先頭がカバー画像 · ×で削除",
-    "paintToolImageHint": "任意 · 最大3枚",
+    "colorRecipe": {
+      "add": "カラーレシピを追加",
+      "hint": "任意 · 写真に使用した塗料の配合を書き込めます",
+      "needPhoto": "先に写真を追加してください",
+      "count": "{count}件のカラーレシピタグ",
+      "pickPhoto": "カラーレシピを付ける写真を選択",
+      "cancel": "閉じる"
+    },
     "tagHint": "Enter またはカンマで追加",
     "tagHintMax": "— 最大{max}個",
     "notFound": "投稿が見つかりません。セッションが切れた可能性があります。",
     "sections": {
       "photos": "写真",
-      "paintTools": "使用した塗料・工具の写真",
       "about": "作品について",
       "materials": "使用素材・テクニック",
       "tags": "タグ"

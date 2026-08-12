@@ -90,6 +90,22 @@
       "authorBadge": "Author",
       "aiFaq": "Frequently asked questions auto-generated from this thread — coming soon."
     },
+    "colorRecipe": {
+      "title": "Color Recipe",
+      "view": "View color recipe",
+      "create": "Add a color recipe",
+      "close": "Close",
+      "empty": "No color recipe on this image yet.",
+      "emptyOwner": "Use Edit → Add to start a color recipe.",
+      "edit": "Edit",
+      "done": "Done",
+      "add": "Add",
+      "delete": "Delete",
+      "pickColor": "Adjust color",
+      "placePin": "Place pin",
+      "tapToPlace": "Tap or drag on the photo to place the pin",
+      "placeholder": "e.g. Mr. Color GX1 White 70% + Mr. Hobby C69 Mahogany 30%"
+    },
     "buildLog": {
       "edit": "Edit",
       "done": "Done",
@@ -221,13 +237,19 @@
     "deleteConfirm": "Delete",
     "deleting": "Deleting…",
     "imageOrderHint": "Drag to reorder · First image is the cover · × to remove",
-    "paintToolImageHint": "Optional · max 3",
+    "colorRecipe": {
+      "add": "Add a color recipe",
+      "hint": "Optional · note the paint mixes used, right on the photo",
+      "needPhoto": "Add a photo first",
+      "count": "{count} color recipe tags",
+      "pickPhoto": "Choose a photo to tag",
+      "cancel": "Close"
+    },
     "tagHint": "Enter or comma to add",
     "tagHintMax": "— max {max}",
     "notFound": "Post not found or session expired.",
     "sections": {
       "photos": "Photos",
-      "paintTools": "Paints & Tools Used",
       "about": "About the Build",
       "materials": "Materials & Techniques",
       "tags": "Tags"
